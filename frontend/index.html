@@ -25,6 +25,9 @@
             transition: opacity 0.3s ease;
         }
     </style>
+    <script src="js/config.js"></script>      <!-- MUST come first -->
+    <script src="js/api-client.js"></script>  <!-- Then this -->
+    <script src="js/app.js"></script>         <!-- Then your app -->
 </head>
 <body class="hero-pattern min-h-screen">
 
@@ -393,5 +396,12 @@
             localStorage.setItem('triage_users', JSON.stringify(users));
         }
     </script>
+     <script>
+        // Page-specific initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 Page loaded');
+        });
+    </script>
+</body>
 </body>
 </html>

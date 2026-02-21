@@ -44,6 +44,9 @@
             animation: bounce 0.5s ease;
         }
     </style>
+    <script src="js/config.js"></script>      <!-- MUST come first -->
+    <script src="js/api-client.js"></script>  <!-- Then this -->
+    <script src="js/app.js"></script>         <!-- Then your app -->
 </head>
 <body class="bg-gray-50">
 
@@ -502,5 +505,12 @@
         // Debug: Log saved items to console
         console.log('Current saved items:', savedItems);
     </script>
+     <script>
+        // Page-specific initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 Page loaded');
+        });
+    </script>
+</body>
 </body>
 </html>

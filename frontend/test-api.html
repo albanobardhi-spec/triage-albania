@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TRIAGE Simple Test</title>
+    <!-- Load API client directly - no dependencies -->
+    <script src="js/api-client.js"></script>
+</head>
+<body>
+    <h1>🇦🇱 TRIAGE Simple Test</h1>
+    <div id="status">Loading...</div>
+    
+    <script>
+        // Check if API loaded
+        setTimeout(() => {
+            const status = document.getElementById('status');
+            
+            if (window.api) {
+                status.innerHTML = '✅ API loaded successfully!<br>';
+                status.innerHTML += 'Testing connection...';
+                
+                window.api.healthCheck()
+                    .then(data => {
+                        status.innerHTML += '<br>✅ Connected to backend!';
+                        status.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    })
+                    .catch(err => {
+                        status.innerHTML += `<br>❌ Connection failed: ${err.message}`;
+                    });
+            } else {
+                status.innerHTML = '❌ API failed to load!';
+            }
+        }, 500);
+    </script>
+</body>
+</html>
