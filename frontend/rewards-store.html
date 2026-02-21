@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIAGE · Albanian Heritage Rewards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .reward-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .reward-card:hover {
+            transform: translateY(-5px);
+            border-color: #e11d48;
+        }
+        .reward-card.redeemed {
+            opacity: 0.7;
+            filter: grayscale(50%);
+            border-color: #10b981;
+        }
+        .limited-badge {
+            background: linear-gradient(135deg, #e11d48, #b45309);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-red-50 to-orange-50">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-red-600 to-black-600 text-white py-3">
+        <div class="container mx-auto px-4 flex items-center">
+            <span class="text-2xl mr-3">🇦🇱</span>
+            <span class="font-medium">Redeem points for authentic Albanian experiences</span>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        
+        <!-- Header with points -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-4xl font-bold flex items-center">
+                    <span class="text-5xl mr-3">🎁</span>
+                    Albanian Heritage Rewards
+                </h1>
+                <p class="text-gray-600">Redeem your points for authentic experiences</p>
+            </div>
+            <div class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-2xl shadow-lg text-center">
+                <span class="text-2xl font-bold" id="points-balance">2,450</span>
+                <span class="text-sm block">Heritage Points</span>
+            </div>
+        </div>
+
+        <!-- Points Progress -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="flex justify-between items-center mb-2">
+                <span class="font-bold">Next Heritage Tier</span>
+                <span class="text-gray-500">2,450 / 5,000</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                <div class="bg-gradient-to-r from-red-500 to-yellow-500 h-4 rounded-full" style="width: 49%"></div>
+            </div>
+            <p class="text-sm text-gray-500">✨ 2,550 more points to unlock "Master of Albanian Traditions"</p>
+        </div>
+
+        <!-- Reward Categories -->
+        <div class="flex space-x-2 mb-6 overflow-x-auto pb-2">
+            <button onclick="filterRewards('all')" class="cat-btn active bg-red-600 text-white px-4 py-2 rounded-full text-sm font-medium">✨ All</button>
+            <button onclick="filterRewards('culinary')" class="cat-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🍖 Culinary</button>
+            <button onclick="filterRewards('cultural')" class="cat-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🏺 Cultural</button>
+            <button onclick="filterRewards('adventure')" class="cat-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">⛰️ Adventure</button>
+            <button onclick="filterRewards('souvenirs')" class="cat-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🎁 Souvenirs</button>
+        </div>
+
+        <!-- Rewards Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-8" id="rewards-container">
+            <!-- Rewards injected here -->
+        </div>
+
+        <!-- Limited Time Offer -->
+        <div class="bg-gradient-to-r from-red-600 to-yellow-600 text-white rounded-2xl p-6 mb-8">
+            <div class="flex items-center">
+                <span class="text-5xl mr-4">🇦🇱</span>
+                <div class="flex-1">
+                    <h3 class="text-xl font-bold">Independence Day Bonus!</h3>
+                    <p class="text-sm opacity-90">Double points on all Albanian heritage activities</p>
+                </div>
+                <span class="bg-white text-red-600 px-4 py-2 rounded-full text-sm font-bold">3 days left</span>
+            </div>
+        </div>
+
+        <!-- Recently Redeemed -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h2 class="text-lg font-bold mb-4 flex items-center">
+                <span class="text-2xl mr-2">🔄</span>
+                Recently Redeemed by Travelers
+            </h2>
+            <div class="space-y-3" id="recent-redeemed">
+                <!-- Recent redemptions -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Rewards database
+        const rewards = [
+            { id: 1, name: 'Traditional Cooking Class', description: 'Learn to make byrek and tavë kosi', emoji: '🍖', points: 500, category: 'culinary', popular: true },
+            { id: 2, name: 'Xhubleta Weaving Workshop', description: 'Learn ancient Albanian skirt weaving', emoji: '🧶', points: 800, category: 'cultural', popular: false },
+            { id: 3, name: 'Iso-Polyphony Concert', description: 'Private performance of UNESCO-listed singing', emoji: '🎵', points: 400, category: 'cultural', popular: true },
+            { id: 4, name: 'Valbona-Theth Guided Hike', description: 'Expert guide through Accursed Mountains', emoji: '⛰️', points: 1200, category: 'adventure', popular: false },
+            { id: 5, name: 'Copper Craft Workshop', description: 'Create your own traditional coffee set', emoji: '🏺', points: 600, category: 'cultural', popular: true },
+            { id: 6, name: 'Kallmet Wine Experience', description: 'Premium wine tasting with winemaker', emoji: '🍷', points: 450, category: 'culinary', popular: false },
+            { id: 7, name: 'Traditional Qeleshe Hat', description: 'Authentic Albanian felt hat', emoji: '🧢', points: 200, category: 'souvenirs', popular: true },
+            { id: 8, name: 'Raki Distillery Tour', description: 'Visit a family-run raki distillery', emoji: '🥃', points: 350, category: 'culinary', popular: false },
+            { id: 9, name: 'Butrint Private Guide', description: 'Expert archaeologist guide', emoji: '🏛️', points: 700, category: 'cultural', popular: true },
+            { id: 10, name: 'Sunset Sailing Ksamil', description: 'Private boat tour of the islands', emoji: '⛵', points: 900, category: 'adventure', popular: false }
+        ];
+
+        let userPoints = 2450;
+        let redeemedRewards = JSON.parse(localStorage.getItem('redeemedRewards')) || [];
+        let currentFilter = 'all';
+
+        // Render rewards
+        function renderRewards() {
+            const container = document.getElementById('rewards-container');
+            container.innerHTML = '';
+            
+            const filtered = currentFilter === 'all' 
+                ? rewards 
+                : rewards.filter(r => r.category === currentFilter);
+            
+            filtered.forEach(reward => {
+                const canAfford = userPoints >= reward.points;
+                const isRedeemed = redeemedRewards.includes(reward.id);
+                
+                container.innerHTML += `
+                    <div class="reward-card bg-white rounded-2xl shadow-lg p-5 ${isRedeemed ? 'redeemed' : ''} relative">
+                        ${reward.popular ? '<span class="absolute top-3 right-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full">🔥 Popular</span>' : ''}
+                        
+                        <span class="text-5xl block mb-3">${reward.emoji}</span>
+                        <h3 class="font-bold text-lg mb-1">${reward.name}</h3>
+                        <p class="text-xs text-gray-500 mb-3">${reward.description}</p>
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="text-red-600 font-bold">⭐ ${reward.points}</span>
+                            
+                            ${isRedeemed ? 
+                                '<span class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-sm">✓ Redeemed</span>' :
+                                `<button onclick="redeemReward(${reward.id})" class="${canAfford ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-300 cursor-not-allowed'} text-white px-4 py-2 rounded-full text-sm font-medium transition">
+                                    ${canAfford ? 'Redeem' : 'Need ' + (reward.points - userPoints) + ' more'}
+                                </button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Redeem reward
+        window.redeemReward = function(rewardId) {
+            const reward = rewards.find(r => r.id === rewardId);
+            
+            if (userPoints >= reward.points && !redeemedRewards.includes(rewardId)) {
+                userPoints -= reward.points;
+                redeemedRewards.push(rewardId);
+                
+                localStorage.setItem('heritagePoints', userPoints);
+                localStorage.setItem('redeemedRewards', JSON.stringify(redeemedRewards));
+                
+                document.getElementById('points-balance').textContent = userPoints;
+                
+                showRedeemSuccess(reward);
+                renderRewards();
+                addToRecent(reward);
+            }
+        };
+
+        // Show success
+        function showRedeemSuccess(reward) {
+            alert(`🎉 Success! You redeemed: ${reward.name}`);
+        }
+
+        // Add to recent
+        function addToRecent(reward) {
+            const recent = document.getElementById('recent-redeemed');
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between py-2 border-b';
+            item.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-2xl mr-3">${reward.emoji}</span>
+                    <span>${reward.name}</span>
+                </div>
+                <span class="text-sm text-gray-500">Just now</span>
+            `;
+            recent.insertBefore(item, recent.firstChild);
+            if (recent.children.length > 4) recent.lastChild.remove();
+        }
+
+        // Filter rewards
+        window.filterRewards = function(category) {
+            currentFilter = category;
+            
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-red-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('active', 'bg-red-600', 'text-white');
+            
+            renderRewards();
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('points-balance').textContent = userPoints;
+            renderRewards();
+            
+            // Add sample recent redemptions
+            const recent = document.getElementById('recent-redeemed');
+            recent.innerHTML = `
+                <div class="flex items-center justify-between py-2">
+                    <div class="flex items-center"><span class="text-2xl mr-3">🍖</span><span>Cooking Class</span></div>
+                    <span class="text-sm text-gray-500">2 hours ago</span>
+                </div>
+                <div class="flex items-center justify-between py-2">
+                    <div class="flex items-center"><span class="text-2xl mr-3">🧢</span><span>Qeleshe Hat</span></div>
+                    <span class="text-sm text-gray-500">Yesterday</span>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

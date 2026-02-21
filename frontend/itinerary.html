@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIAGE · Your Albanian Itinerary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .timeline-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            cursor: move;
+        }
+        .timeline-item.completed {
+            opacity: 0.8;
+            background-color: #f0fdf4;
+            border-left-color: #10b981;
+        }
+        .timeline-item:hover {
+            transform: translateX(5px);
+            background-color: #f9fafb;
+        }
+        .drag-handle {
+            cursor: grab;
+        }
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        .saved-item {
+            transition: all 0.2s ease;
+        }
+        .saved-item:hover {
+            background-color: #fef2f2;
+        }
+        .empty-state {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .bounce {
+            animation: bounce 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-red-600 to-black-600 text-white py-3 sticky top-0 z-10">
+        <div class="container mx-auto px-4 flex items-center justify-between">
+            <div class="flex items-center">
+                <span class="text-2xl mr-3">🇦🇱</span>
+                <span class="font-medium">Building your Albanian adventure</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="bg-white/20 px-3 py-1 rounded-full text-sm" id="saved-badge">0 saved</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        
+        <!-- Header with date selector -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold flex items-center">
+                    <span class="text-4xl mr-3">🗓️</span>
+                    Your Albanian Itinerary
+                </h1>
+                <p class="text-gray-500">Drag to reorder. Check off as you go.</p>
+            </div>
+            <div class="flex space-x-2">
+                <select id="day-selector" class="bg-white border rounded-lg px-4 py-2" onchange="changeDay(this.value)">
+                    <option value="1">Day 1 - Tirana</option>
+                    <option value="2">Day 2 - Berat</option>
+                    <option value="3">Day 3 - Gjirokastër</option>
+                    <option value="4">Day 4 - Riviera</option>
+                </select>
+                <button onclick="addCustomItem()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition">
+                    + Add Custom
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center">
+                <span class="text-2xl block mb-1">📍</span>
+                <span class="font-bold" id="places-count">0</span>
+                <span class="text-sm text-gray-500">places</span>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center">
+                <span class="text-2xl block mb-1">✅</span>
+                <span class="font-bold" id="completed-count">0</span>
+                <span class="text-sm text-gray-500">completed</span>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-4 text-center">
+                <span class="text-2xl block mb-1">🏺</span>
+                <span class="font-bold" id="heritage-count">0</span>
+                <span class="text-sm text-gray-500">heritage sites</span>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <h2 class="text-lg font-bold mb-4 flex items-center">
+                <span class="text-2xl mr-2">📋</span>
+                Your Daily Plan
+            </h2>
+            <div class="space-y-3" id="timeline-items">
+                <!-- Items loaded here -->
+            </div>
+            <div id="empty-itinerary" class="hidden text-center py-12">
+                <span class="text-6xl block mb-4">🗺️</span>
+                <h3 class="text-xl font-bold text-gray-700 mb-2">Your itinerary is empty</h3>
+                <p class="text-gray-500 mb-4">Add places from your saved list below</p>
+            </div>
+        </div>
+
+        <!-- Quick Add from Saved -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h3 class="text-lg font-bold mb-4 flex items-center">
+                <span class="text-2xl mr-2">🔖</span>
+                Your Saved Places
+            </h3>
+            <div class="space-y-2 max-h-96 overflow-y-auto pr-2" id="saved-items-container">
+                <!-- Saved items loaded here -->
+            </div>
+            <div id="empty-saved" class="hidden text-center py-8">
+                <span class="text-6xl block mb-4">❤️</span>
+                <h3 class="text-lg font-bold text-gray-700 mb-2">No saved places yet</h3>
+                <p class="text-gray-500 mb-4">Go to recommendations and click ♥ to save places</p>
+                <a href="triage-results.html" class="inline-block bg-red-600 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-red-700 transition">
+                    Browse Recommendations
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+    <!-- Success Toast -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl z-50 hidden transition-all duration-300">
+        ✅ Added to itinerary!
+    </div>
+
+    <script>
+        // ==================== DATA MANAGEMENT ====================
+        
+        // Load saved items from localStorage
+        let savedItems = [];
+        try {
+            savedItems = JSON.parse(localStorage.getItem('albanianSavedItems')) || [];
+            console.log('✅ Loaded saved items:', savedItems.length);
+        } catch (e) {
+            console.error('Error loading saved items:', e);
+            savedItems = [];
+        }
+
+        // Load itinerary or use default
+        let itinerary = [];
+        try {
+            itinerary = JSON.parse(localStorage.getItem('albanianItinerary')) || [
+                { id: '1', time: '09:00', emoji: '🏛️', title: 'Skanderbeg Square', location: 'Tirana', completed: false, notes: 'Start your day in the heart of Tirana' },
+                { id: '2', time: '11:00', emoji: '🚇', title: 'Bunk\'Art Museum', location: 'Tirana', completed: false, notes: 'Fascinating communist history' },
+                { id: '3', time: '13:00', emoji: '🍖', title: 'Lunch: Tavë Kosi', location: 'Traditional restaurant', completed: false, notes: 'Try the national dish' },
+                { id: '4', time: '15:00', emoji: '🏺', title: 'National History Museum', location: 'Tirana', completed: false, notes: '' },
+                { id: '5', time: '18:00', emoji: '🌅', title: 'Dajti Express Cable Car', location: 'Tirana', completed: false, notes: 'Sunset views over the city' }
+            ];
+        } catch (e) {
+            console.error('Error loading itinerary:', e);
+            itinerary = [];
+        }
+
+        let currentDay = 1;
+
+        // ==================== UI UPDATE FUNCTIONS ====================
+
+        // Update saved badge
+        function updateSavedBadge() {
+            const badge = document.getElementById('saved-badge');
+            if (badge) {
+                badge.textContent = `${savedItems.length} saved`;
+            }
+        }
+
+        // Save itinerary to localStorage
+        function saveItinerary() {
+            try {
+                localStorage.setItem('albanianItinerary', JSON.stringify(itinerary));
+            } catch (e) {
+                console.error('Error saving itinerary:', e);
+            }
+        }
+
+        // Show toast message
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = '✅ ' + message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2000);
+        }
+
+        // ==================== CONFETTI ====================
+        
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationFrame;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function createConfetti() {
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: -10,
+                    size: Math.random() * 5 + 2,
+                    speedY: Math.random() * 3 + 2,
+                    speedX: (Math.random() - 0.5) * 2,
+                    color: `hsl(${Math.random() * 360}, 70%, 50%)`
+                });
+            }
+            
+            if (!animationFrame) {
+                animateConfetti();
+            }
+        }
+
+        function animateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            let stillActive = false;
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.y += p.speedY;
+                p.x += p.speedX;
+                
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                
+                if (p.y < canvas.height) {
+                    stillActive = true;
+                } else {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            if (stillActive) {
+                animationFrame = requestAnimationFrame(animateConfetti);
+            } else {
+                animationFrame = null;
+            }
+        }
+
+        // ==================== ITINERARY FUNCTIONS ====================
+
+        // Render timeline
+        function renderTimeline() {
+            const itemsContainer = document.getElementById('timeline-items');
+            const emptyItinerary = document.getElementById('empty-itinerary');
+            
+            if (!itemsContainer) return;
+            
+            if (itinerary.length === 0) {
+                emptyItinerary.classList.remove('hidden');
+                itemsContainer.innerHTML = '';
+                return;
+            }
+            
+            emptyItinerary.classList.add('hidden');
+            itemsContainer.innerHTML = '';
+            
+            itinerary.forEach((item, index) => {
+                itemsContainer.innerHTML += `
+                    <div class="timeline-item flex items-center p-4 bg-gray-50 rounded-xl ${item.completed ? 'completed' : ''}" draggable="true" data-index="${index}">
+                        <div class="drag-handle mr-3 text-gray-400">⋮⋮</div>
+                        <span class="text-3xl mr-3">${item.emoji || '📍'}</span>
+                        <div class="flex-1">
+                            <div class="flex items-center">
+                                <span class="font-bold">${item.time || '12:00'}</span>
+                                <span class="mx-2 text-gray-300">•</span>
+                                <span class="text-gray-600 font-medium">${item.title}</span>
+                            </div>
+                            <p class="text-xs text-gray-400">📍 ${item.location || 'Albania'}</p>
+                            ${item.notes ? `<p class="text-xs text-gray-500 mt-1">📝 ${item.notes}</p>` : ''}
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" class="w-5 h-5 accent-green-500" 
+                                ${item.completed ? 'checked' : ''} 
+                                onchange="toggleComplete(${index})">
+                            <button onclick="editItem(${index})" class="text-gray-400 hover:text-gray-600 p-1">✎</button>
+                            <button onclick="deleteItem(${index})" class="text-gray-400 hover:text-red-600 p-1">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Update stats
+            document.getElementById('places-count').textContent = itinerary.length;
+            document.getElementById('completed-count').textContent = itinerary.filter(i => i.completed).length;
+            document.getElementById('heritage-count').textContent = itinerary.filter(i => 
+                ['🏛️', '🏺', '🏰', '🏯'].includes(i.emoji)
+            ).length;
+
+            saveItinerary();
+            addDragAndDrop();
+        }
+
+        // Render saved items
+        function renderSavedItems() {
+            const container = document.getElementById('saved-items-container');
+            const emptySaved = document.getElementById('empty-saved');
+            
+            if (!container) return;
+            
+            updateSavedBadge();
+            
+            if (savedItems.length === 0) {
+                emptySaved.classList.remove('hidden');
+                container.innerHTML = '';
+                return;
+            }
+            
+            emptySaved.classList.add('hidden');
+            container.innerHTML = '';
+            
+            savedItems.forEach((item, index) => {
+                // Check if already in itinerary
+                const isInItinerary = itinerary.some(i => i.title === (item.name || item.title));
+                
+                container.innerHTML += `
+                    <div class="saved-item flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-red-50 transition">
+                        <div class="flex items-center flex-1">
+                            <span class="text-3xl mr-3">${item.emoji || '📍'}</span>
+                            <div>
+                                <p class="font-medium">${item.name || item.title || 'Saved place'}</p>
+                                <p class="text-xs text-gray-400">${item.location || 'Albania'}</p>
+                            </div>
+                        </div>
+                        <button onclick="addToItinerary(${index})" 
+                                class="${isInItinerary ? 'bg-green-500 text-white' : 'bg-red-600 text-white'} px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition ml-2"
+                                ${isInItinerary ? 'disabled' : ''}>
+                            ${isInItinerary ? '✓ Added' : '+ Add'}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // Toggle complete
+        window.toggleComplete = function(index) {
+            itinerary[index].completed = !itinerary[index].completed;
+            renderTimeline();
+            
+            if (itinerary[index].completed) {
+                createConfetti();
+            }
+        };
+
+        // Edit item
+        window.editItem = function(index) {
+            const item = itinerary[index];
+            const notes = prompt('Add notes for ' + item.title + ':', item.notes || '');
+            if (notes !== null) {
+                itinerary[index].notes = notes;
+                renderTimeline();
+            }
+        };
+
+        // Delete item
+        window.deleteItem = function(index) {
+            if (confirm('Remove this from your itinerary?')) {
+                itinerary.splice(index, 1);
+                renderTimeline();
+                showToast('Item removed');
+            }
+        };
+
+        // Add custom item
+        window.addCustomItem = function() {
+            const title = prompt('What would you like to add?');
+            if (title) {
+                const newItem = {
+                    id: 'custom_' + Date.now(),
+                    time: '12:00',
+                    emoji: '📍',
+                    title: title,
+                    location: 'Custom location',
+                    completed: false,
+                    notes: ''
+                };
+                itinerary.push(newItem);
+                renderTimeline();
+                showToast('Custom item added');
+            }
+        };
+
+        // Add to itinerary from saved
+        window.addToItinerary = function(savedIndex) {
+            const savedItem = savedItems[savedIndex];
+            
+            if (!savedItem) return;
+            
+            // Check if already in itinerary
+            if (itinerary.some(i => i.title === (savedItem.name || savedItem.title))) {
+                alert('This item is already in your itinerary!');
+                return;
+            }
+            
+            const newItem = {
+                id: 'from_saved_' + Date.now(),
+                time: '12:00',
+                emoji: savedItem.emoji || '📍',
+                title: savedItem.name || savedItem.title || 'Saved place',
+                location: savedItem.location || 'Albania',
+                completed: false,
+                notes: savedItem.notes || '',
+                fromSaved: true
+            };
+            
+            itinerary.push(newItem);
+            renderTimeline();
+            renderSavedItems(); // Re-render to update button states
+            showToast('Added to your itinerary!');
+        };
+
+        // Remove from saved
+        window.removeFromSaved = function(index) {
+            if (confirm('Remove from saved places?')) {
+                savedItems.splice(index, 1);
+                localStorage.setItem('albanianSavedItems', JSON.stringify(savedItems));
+                renderSavedItems();
+                showToast('Removed from saved');
+            }
+        };
+
+        // Change day
+        window.changeDay = function(day) {
+            currentDay = parseInt(day);
+            showToast(`Switched to Day ${day}`);
+        };
+
+        // ==================== DRAG AND DROP ====================
+
+        function addDragAndDrop() {
+            const items = document.querySelectorAll('.timeline-item');
+            let draggedItem = null;
+
+            items.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedItem = item;
+                    item.classList.add('dragging');
+                });
+
+                item.addEventListener('dragend', (e) => {
+                    item.classList.remove('dragging');
+                });
+
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedItem && draggedItem !== item) {
+                        const draggedIndex = parseInt(draggedItem.dataset.index);
+                        const targetIndex = parseInt(item.dataset.index);
+                        
+                        const [removed] = itinerary.splice(draggedIndex, 1);
+                        itinerary.splice(targetIndex, 0, removed);
+                        
+                        renderTimeline();
+                        showToast('Reordered');
+                    }
+                });
+            });
+        }
+
+        // ==================== INITIALIZATION ====================
+
+        // Initial render
+        renderTimeline();
+        renderSavedItems();
+
+        // Auto-save when page unloads
+        window.addEventListener('beforeunload', () => {
+            saveItinerary();
+        });
+
+        // Debug: Log saved items to console
+        console.log('Current saved items:', savedItems);
+    </script>
+</body>
+</html>

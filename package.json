@@ -1,0 +1,16 @@
+{
+  "name": "triage-complete",
+  "version": "1.0.0",
+  "description": "TRIAGE - Albanian Heritage Discovery Platform",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "npx nodemon backend/server.js",
+    "frontend": "npx live-server frontend --port=5500",
+    "dev:all": "npx concurrently \"npm run dev\" \"npm run frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "live-server": "^1.2.2",
+    "nodemon": "^3.0.1"
+  }
+}

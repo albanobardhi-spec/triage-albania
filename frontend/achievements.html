@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIAGE · Albanian Heritage Achievements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 5px gold); }
+            50% { filter: drop-shadow(0 0 20px gold); transform: scale(1.02); }
+        }
+        .legendary-glow {
+            animation: glow 3s infinite;
+        }
+        
+        @keyframes unlockPop {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-animation {
+            animation: unlockPop 0.5s ease-out;
+        }
+        
+        .achievement-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(145deg, #ffffff 0%, #fef2f2 100%);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .achievement-card.unlocked {
+            background: linear-gradient(145deg, #fef9e7 0%, #fef3c7 100%);
+            border-color: #b45309;
+            box-shadow: 0 10px 25px -5px rgba(180, 83, 9, 0.3);
+        }
+        
+        .achievement-card.locked {
+            opacity: 0.6;
+            filter: grayscale(40%);
+        }
+        
+        .tier-badge {
+            background: linear-gradient(135deg, #e11d48, #b45309);
+        }
+        
+        .secret-badge {
+            background: linear-gradient(135deg, #6b21a5, #a855f7);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-red-50 via-amber-50 to-orange-50 min-h-screen">
+
+    <!-- Animated background -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute top-20 left-10 w-64 h-64 bg-red-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"></div>
+        <div class="absolute bottom-20 right-10 w-80 h-80 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse delay-1000"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="relative z-10 bg-gradient-to-r from-red-600 via-red-700 to-black-800 text-white py-4 shadow-2xl">
+        <div class="container mx-auto px-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="text-4xl">🦅</span>
+                <div>
+                    <span class="font-bold text-xl">HERITAGE ACHIEVEMENTS</span>
+                    <p class="text-xs text-red-200">Earn honors as you discover the Land of Eagles</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 bg-white/20 backdrop-blur px-4 py-2 rounded-full">
+                <span class="text-2xl">🏺</span>
+                <span class="font-medium">4000 years of history</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="relative z-10 container mx-auto px-4 py-8 max-w-6xl">
+        
+        <!-- Hero -->
+        <div class="text-center mb-12">
+            <div class="inline-block bg-white/80 backdrop-blur-xl rounded-full p-4 mb-4 border-4 border-red-500 shadow-2xl">
+                <span class="text-7xl">🏆</span>
+            </div>
+            <h1 class="text-5xl font-black mb-2 bg-gradient-to-r from-red-600 to-black-800 text-transparent bg-clip-text">
+                Albanian Heritage Collection
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                Unlock badges by experiencing the real Albania — its ancient sites, mountain traditions, 
+                culinary secrets, and living culture.
+            </p>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+            <div class="bg-white/90 backdrop-blur rounded-3xl shadow-xl p-6 text-center transform hover:scale-105 transition">
+                <span class="text-4xl block mb-2">🏅</span>
+                <span class="text-3xl font-bold" id="badges-earned">0</span>
+                <span class="text-gray-500 block">Badges Earned</span>
+                <span class="text-sm text-gray-400">/24 Total</span>
+            </div>
+            
+            <div class="bg-white/90 backdrop-blur rounded-3xl shadow-xl p-6 text-center transform hover:scale-105 transition">
+                <span class="text-4xl block mb-2">⭐</span>
+                <span class="text-3xl font-bold" id="total-points">0</span>
+                <span class="text-gray-500 block">Heritage Points</span>
+                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div class="bg-gradient-to-r from-red-500 to-yellow-500 h-2 rounded-full" id="points-progress" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="bg-white/90 backdrop-blur rounded-3xl shadow-xl p-6 text-center transform hover:scale-105 transition">
+                <span class="text-4xl block mb-2">👑</span>
+                <span class="text-2xl font-bold" id="current-tier">Bronze Explorer</span>
+                <span class="text-gray-500 block">Current Tier</span>
+            </div>
+            
+            <div class="bg-white/90 backdrop-blur rounded-3xl shadow-xl p-6 text-center transform hover:scale-105 transition">
+                <span class="text-4xl block mb-2">🔥</span>
+                <span class="text-3xl font-bold" id="completion-rate">0%</span>
+                <span class="text-gray-500 block">Completion</span>
+            </div>
+        </div>
+
+        <!-- Tier Progress -->
+        <div class="bg-white/90 backdrop-blur rounded-3xl shadow-xl p-8 mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <span class="text-3xl mr-3">📈</span>
+                Your Heritage Journey
+            </h2>
+            
+            <div class="grid grid-cols-5 gap-2 mb-4">
+                <div class="text-center"><div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-2xl mb-2 bg-gray-200" id="tier-1-icon">🥉</div><span class="text-sm font-bold">Bronze</span></div>
+                <div class="text-center"><div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-2xl mb-2 bg-gray-200" id="tier-2-icon">🥈</div><span class="text-sm font-bold">Silver</span></div>
+                <div class="text-center"><div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-2xl mb-2 bg-gray-200" id="tier-3-icon">🥇</div><span class="text-sm font-bold">Gold</span></div>
+                <div class="text-center"><div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-2xl mb-2 bg-gray-200" id="tier-4-icon">🏆</div><span class="text-sm font-bold">Platinum</span></div>
+                <div class="text-center"><div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center text-2xl mb-2 legendary-glow" id="tier-5-icon">🦅</div><span class="text-sm font-bold">Legendary</span></div>
+            </div>
+            
+            <div class="w-full bg-gray-200 rounded-full h-4">
+                <div class="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-4 rounded-full transition-all duration-500" id="tier-progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex flex-wrap gap-2 mb-8">
+            <button onclick="filterAchievements('all')" class="filter-btn active bg-red-600 text-white px-4 py-2 rounded-full text-sm font-medium">✨ All</button>
+            <button onclick="filterAchievements('history')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🏛️ History</button>
+            <button onclick="filterAchievements('nature')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">⛰️ Nature</button>
+            <button onclick="filterAchievements('food')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🍖 Food</button>
+            <button onclick="filterAchievements('culture')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🎭 Culture</button>
+            <button onclick="filterAchievements('adventure')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">⚡ Adventure</button>
+            <button onclick="filterAchievements('legendary')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🦅 Legendary</button>
+        </div>
+
+        <!-- Achievements Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12" id="achievements-container">
+            <!-- Achievements injected here -->
+        </div>
+
+        <!-- Next Milestones -->
+        <div class="bg-gradient-to-r from-red-600 to-black-800 text-white rounded-3xl shadow-2xl p-8 mb-12">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <span class="text-3xl mr-3">🎯</span>
+                Your Next Milestones
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="next-milestones">
+                <!-- Next milestones injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Modal -->
+    <div id="celebration-modal" class="fixed inset-0 flex items-center justify-center z-50 bg-black/70 hidden">
+        <div class="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-3xl p-1 max-w-md mx-4">
+            <div class="bg-white rounded-3xl p-8 text-center">
+                <span class="text-8xl block mb-4 animate-bounce" id="celebration-emoji">🏆</span>
+                <h2 class="text-3xl font-bold mb-2" id="celebration-title">Achievement Unlocked!</h2>
+                <p class="text-xl mb-2" id="celebration-name"></p>
+                <p class="text-amber-600 text-2xl font-bold mb-6" id="celebration-points"></p>
+                <button onclick="closeCelebration()" class="bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-3 rounded-full font-bold hover:shadow-xl transition">
+                    ✨ Continue Exploring
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Albanian Heritage Achievements Database
+        const achievements = [
+            // History (1-6)
+            { id: 1, name: 'Illyrian Roots', description: 'Visit Butrint and Apollonia', emoji: '🏛️', category: 'history', points: 150, unlocked: false, progress: 67, secret: false },
+            { id: 2, name: 'Castle Conqueror', description: 'Visit Rozafa, Berat, and Gjirokastër castles', emoji: '🏰', category: 'history', points: 150, unlocked: false, progress: 33, secret: false },
+            { id: 3, name: 'Skanderbeg Devotee', description: 'Visit Kruja Castle', emoji: '⚔️', category: 'history', points: 100, unlocked: false, progress: 0, secret: false },
+            { id: 4, name: 'Bunker Hunter', description: 'Visit 5 communist bunkers', emoji: '🚇', category: 'history', points: 125, unlocked: false, progress: 20, secret: false },
+            { id: 5, name: 'Ancient Ambassador', description: 'Visit 3 ancient sites', emoji: '🏺', category: 'history', points: 300, unlocked: false, progress: 33, secret: true },
+            { id: 6, name: 'Ottoman Echoes', description: 'Stay in Ottoman houses', emoji: '🏘️', category: 'history', points: 200, unlocked: false, progress: 50, secret: false },
+            
+            // Nature (7-12)
+            { id: 7, name: 'Mountain Warrior', description: 'Complete Valbona-Theth hike', emoji: '⛰️', category: 'nature', points: 250, unlocked: false, progress: 0, secret: false },
+            { id: 8, name: 'Blue Eye Seer', description: 'Visit both Blue Eyes', emoji: '💙', category: 'nature', points: 150, unlocked: false, progress: 50, secret: false },
+            { id: 9, name: 'Riviera Sunset', description: 'Watch sunset in 3 spots', emoji: '🌅', category: 'nature', points: 150, unlocked: false, progress: 33, secret: false },
+            { id: 10, name: 'Llogara Eagle', description: 'Drive the Llogara Pass', emoji: '🌲', category: 'nature', points: 100, unlocked: false, progress: 0, secret: false },
+            { id: 11, name: 'Grama Bay Explorer', description: 'Reach remote Grama Bay', emoji: '🏖️', category: 'nature', points: 200, unlocked: false, progress: 0, secret: true },
+            { id: 12, name: 'National Park Collector', description: 'Visit 5 national parks', emoji: '🏞️', category: 'nature', points: 250, unlocked: false, progress: 20, secret: false },
+            
+            // Food (13-16)
+            { id: 13, name: 'Master of Tavë Kosi', description: 'Try national dish in 3 cities', emoji: '🍖', category: 'food', points: 100, unlocked: false, progress: 33, secret: false },
+            { id: 14, name: 'Wine Connoisseur', description: 'Taste 3 Albanian wines', emoji: '🍷', category: 'food', points: 150, unlocked: false, progress: 33, secret: false },
+            { id: 15, name: 'Raki Master', description: 'Try 5 types of raki', emoji: '🥃', category: 'food', points: 125, unlocked: false, progress: 20, secret: false },
+            { id: 16, name: 'Byrek Champion', description: 'Try byrek in 3 cities', emoji: '🥟', category: 'food', points: 100, unlocked: false, progress: 33, secret: false },
+            
+            // Culture (17-20)
+            { id: 17, name: 'Iso-Polyphony Listener', description: 'Attend live performance', emoji: '🎵', category: 'culture', points: 150, unlocked: false, progress: 0, secret: false },
+            { id: 18, name: 'Xhubleta Weaver', description: 'See traditional skirts', emoji: '🧶', category: 'culture', points: 175, unlocked: false, progress: 0, secret: false },
+            { id: 19, name: 'Besa Keeper', description: 'Share meal with local family', emoji: '🤝', category: 'culture', points: 200, unlocked: false, progress: 0, secret: true },
+            { id: 20, name: 'Bazaar Master', description: 'Shop at 3 bazaars', emoji: '🏺', category: 'culture', points: 125, unlocked: false, progress: 33, secret: false },
+            
+            // Adventure (21-23)
+            { id: 21, name: 'Off-Road Explorer', description: 'Take a 4x4 adventure', emoji: '🚙', category: 'adventure', points: 150, unlocked: false, progress: 0, secret: false },
+            { id: 22, name: 'Kayak Adventurer', description: 'Kayak in Ionian Sea', emoji: '🚣', category: 'adventure', points: 150, unlocked: false, progress: 50, secret: false },
+            
+            // Legendary (24)
+            { id: 23, name: 'Eagle\'s Legacy', description: 'Complete all achievements', emoji: '🦅', category: 'legendary', points: 1000, unlocked: false, progress: 0, secret: true }
+        ];
+
+        // Load from localStorage
+        let userAchievements = JSON.parse(localStorage.getItem('albanianAchievements')) || achievements;
+        let totalPoints = parseInt(localStorage.getItem('heritagePoints')) || 450;
+        let currentFilter = 'all';
+
+        // Calculate stats
+        function updateStats() {
+            const unlockedCount = userAchievements.filter(a => a.unlocked).length;
+            const secretCount = userAchievements.filter(a => a.secret && a.unlocked).length;
+            const completionRate = Math.round((unlockedCount / userAchievements.length) * 100);
+            
+            // Determine tier
+            let currentTier = 'Bronze Explorer';
+            if (unlockedCount >= 20) currentTier = 'Platinum Master';
+            else if (unlockedCount >= 15) currentTier = 'Gold Guardian';
+            else if (unlockedCount >= 8) currentTier = 'Silver Seeker';
+            
+            document.getElementById('badges-earned').textContent = unlockedCount;
+            document.getElementById('total-points').textContent = totalPoints;
+            document.getElementById('points-progress').style.width = Math.min(100, (totalPoints / 3000) * 100) + '%';
+            document.getElementById('current-tier').textContent = currentTier;
+            document.getElementById('completion-rate').textContent = completionRate + '%';
+            
+            // Tier progress
+            const tierProgress = (unlockedCount / 23) * 100;
+            document.getElementById('tier-progress-bar').style.width = tierProgress + '%';
+            
+            // Update tier icons
+            const tiers = ['🥉', '🥈', '🥇', '🏆', '🦅'];
+            for (let i = 0; i < 5; i++) {
+                document.getElementById(`tier-${i+1}-icon`).textContent = unlockedCount >= (i+1)*4 ? tiers[i] : '⚪';
+            }
+        }
+
+        // Render achievements
+        function renderAchievements() {
+            const container = document.getElementById('achievements-container');
+            container.innerHTML = '';
+            
+            const filtered = currentFilter === 'all' 
+                ? userAchievements 
+                : userAchievements.filter(a => a.category === currentFilter);
+            
+            filtered.forEach(ach => {
+                const progressPercent = ach.unlocked ? 100 : ach.progress;
+                const cardClass = ach.unlocked ? 'unlocked' : 'locked';
+                
+                container.innerHTML += `
+                    <div class="achievement-card ${cardClass} rounded-3xl shadow-xl p-6 ${ach.unlocked ? 'legendary-glow' : ''}" data-id="${ach.id}">
+                        ${ach.secret ? '<span class="absolute top-3 right-3 bg-purple-600 text-white text-xs px-2 py-1 rounded-full z-10">🤫 Secret</span>' : ''}
+                        
+                        <div class="flex items-start justify-between mb-4">
+                            <span class="text-6xl">${ach.emoji}</span>
+                            <span class="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-bold">
+                                ⭐ ${ach.points}
+                            </span>
+                        </div>
+                        
+                        <h3 class="text-xl font-bold mb-2">${ach.name}</h3>
+                        <p class="text-sm text-gray-600 mb-3">${ach.description}</p>
+                        
+                        <div class="mb-4">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span>Progress</span>
+                                <span>${ach.progress}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-gradient-to-r from-red-500 to-yellow-500 h-2.5 rounded-full transition-all duration-500" 
+                                     style="width: ${progressPercent}%"></div>
+                            </div>
+                        </div>
+                        
+                        ${!ach.unlocked ? `
+                            <button onclick="updateProgress(${ach.id})" 
+                                    class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2 rounded-xl font-medium hover:from-red-700 hover:to-red-800 transition transform hover:scale-105">
+                                + Update Progress
+                            </button>
+                        ` : `
+                            <div class="w-full bg-green-100 text-green-700 py-2 rounded-xl font-medium text-center">
+                                ✓ Unlocked
+                            </div>
+                        `}
+                    </div>
+                `;
+            });
+            
+            renderNextMilestones();
+            updateStats();
+        }
+
+        // Update progress
+        window.updateProgress = function(achievementId) {
+            const achievement = userAchievements.find(a => a.id === achievementId);
+            
+            if (achievement && !achievement.unlocked) {
+                achievement.progress = Math.min(achievement.progress + 25, 100);
+                
+                if (achievement.progress >= 100) {
+                    unlockAchievement(achievementId);
+                }
+                
+                localStorage.setItem('albanianAchievements', JSON.stringify(userAchievements));
+                renderAchievements();
+                showNotification(`📈 Progress updated: ${achievement.name}`);
+            }
+        };
+
+        // Unlock achievement
+        function unlockAchievement(achievementId) {
+            const achievement = userAchievements.find(a => a.id === achievementId);
+            
+            if (achievement && !achievement.unlocked) {
+                achievement.unlocked = true;
+                totalPoints += achievement.points;
+                
+                localStorage.setItem('albanianAchievements', JSON.stringify(userAchievements));
+                localStorage.setItem('heritagePoints', totalPoints);
+                
+                showCelebration(achievement);
+                renderAchievements();
+            }
+        }
+
+        // Show celebration
+        function showCelebration(achievement) {
+            document.getElementById('celebration-emoji').textContent = achievement.emoji;
+            document.getElementById('celebration-name').textContent = achievement.name;
+            document.getElementById('celebration-points').textContent = `+${achievement.points} points`;
+            document.getElementById('celebration-title').textContent = achievement.secret ? '🤫 Secret Achievement!' : '🏆 Achievement Unlocked!';
+            document.getElementById('celebration-modal').classList.remove('hidden');
+        }
+
+        // Close celebration
+        window.closeCelebration = function() {
+            document.getElementById('celebration-modal').classList.add('hidden');
+        };
+
+        // Filter achievements
+        window.filterAchievements = function(filter) {
+            currentFilter = filter;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-red-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('active', 'bg-red-600', 'text-white');
+            
+            renderAchievements();
+        };
+
+        // Render next milestones
+        function renderNextMilestones() {
+            const container = document.getElementById('next-milestones');
+            container.innerHTML = '';
+            
+            const nextAchievements = userAchievements
+                .filter(a => !a.unlocked)
+                .sort((a, b) => b.progress - a.progress)
+                .slice(0, 3);
+            
+            nextAchievements.forEach(ach => {
+                container.innerHTML += `
+                    <div class="bg-white/20 backdrop-blur rounded-2xl p-4">
+                        <div class="flex items-center mb-3">
+                            <span class="text-4xl mr-3">${ach.emoji}</span>
+                            <div>
+                                <h3 class="font-bold">${ach.name}</h3>
+                                <p class="text-sm text-white/80">${ach.progress}% complete</p>
+                            </div>
+                        </div>
+                        <div class="w-full bg-white/30 rounded-full h-2">
+                            <div class="bg-white h-2 rounded-full" style="width: ${ach.progress}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Show notification
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-3 rounded-full shadow-2xl z-50';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 2000);
+        }
+
+        // Initialize
+        renderAchievements();
+    </script>
+</body>
+</html>

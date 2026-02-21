@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIAGE · Your Albanian Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .result-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .result-card.saved {
+            border: 3px solid #10b981;
+            background-color: #f0fdf4;
+        }
+        .save-btn.saved {
+            background-color: #10b981;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-red-600 to-black-600 text-white py-4">
+        <div class="container mx-auto px-4 flex items-center justify-between">
+            <div class="flex items-center">
+                <span class="text-3xl mr-3">🇦🇱</span>
+                <span class="font-medium">Your Personalized Albanian Heritage Journey</span>
+            </div>
+            <a href="itinerary.html" class="bg-white text-red-600 px-4 py-2 rounded-full text-sm font-medium">
+                View My List
+            </a>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        
+        <!-- Profile Summary -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="text-3xl mr-3">🧑‍🌾</span>
+                    <div>
+                        <h3 class="font-bold">Your Albanian Explorer Profile</h3>
+                        <p class="text-sm text-gray-500" id="profile-summary">Loading profile...</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="refreshRecommendations()" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                        ↻ Refresh
+                    </button>
+                    <button onclick="shareJourney()" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                        📤 Share
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRIAGE Category Card -->
+        <div id="category-card" class="rounded-3xl shadow-2xl p-8 mb-10 text-white bg-gradient-to-r from-red-600 to-red-800">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-7xl" id="category-emoji">🌿</span>
+                <span class="bg-white/20 backdrop-blur px-4 py-2 rounded-full text-lg font-bold" id="category-badge">
+                    Heritage Explorer
+                </span>
+            </div>
+            <h2 class="text-4xl font-bold mb-3" id="category-title">Free Spirit Explorer</h2>
+            <p class="text-xl opacity-90 mb-6" id="category-message">You have time to discover Albania's hidden corners and traditions.</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button onclick="filterCategory('all')" class="filter-btn active bg-red-600 text-white px-4 py-2 rounded-full text-sm font-medium">✨ All</button>
+            <button onclick="filterCategory('history')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🏛️ History</button>
+            <button onclick="filterCategory('nature')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">⛰️ Nature</button>
+            <button onclick="filterCategory('food')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🍖 Food</button>
+            <button onclick="filterCategory('culture')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🎭 Culture</button>
+            <button onclick="filterCategory('beach')" class="filter-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">🏖️ Beach</button>
+        </div>
+
+        <!-- Recommendations Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" id="recommendations-container">
+            <!-- Cards injected by JS -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-center">
+            <a href="itinerary.html" class="bg-red-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-red-700 transition shadow-lg">
+                🗺️ Build My Albanian Itinerary
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Albanian locations database
+        const locations = [
+            {
+                id: 'loc_1',
+                name: 'Butrint National Park',
+                description: 'UNESCO World Heritage site with ruins from Greek, Roman, Byzantine periods. 2500 years of history.',
+                emoji: '🏛️',
+                time: '3-4 hours',
+                match: 98,
+                crowd: 'Moderate',
+                category: 'history',
+                location: 'Sarandë',
+                period: 'Greek-Roman-Byzantine',
+                culturalTip: 'Look for the lion gate and the stunning baptistery mosaics',
+                saved: false
+            },
+            {
+                id: 'loc_2',
+                name: 'Berat - City of a Thousand Windows',
+                description: 'UNESCO World Heritage. Ottoman-era houses cascading down the hill, crowned by Berat Castle.',
+                emoji: '🏘️',
+                time: 'Full day',
+                match: 96,
+                crowd: 'Busy',
+                category: 'history',
+                location: 'Berat',
+                period: 'Ottoman',
+                culturalTip: 'Visit the Onufri Museum to see incredible 16th-century iconography',
+                saved: false
+            },
+            {
+                id: 'loc_3',
+                name: 'Gjirokastër - Stone City',
+                description: 'UNESCO town of stone-roofed houses, dominated by a massive castle.',
+                emoji: '🏰',
+                time: 'Full day',
+                match: 95,
+                crowd: 'Moderate',
+                category: 'history',
+                location: 'Gjirokastër',
+                period: 'Ottoman',
+                culturalTip: 'Try the local specialty: qifqi (rice balls with herbs)',
+                saved: false
+            },
+            {
+                id: 'loc_4',
+                name: 'Blue Eye (Syri i Kaltër)',
+                description: 'Natural spring with crystal clear blue water. Over 50 meters deep.',
+                emoji: '💙',
+                time: '1-2 hours',
+                match: 99,
+                crowd: 'Very busy',
+                category: 'nature',
+                location: 'Near Sarandë',
+                period: 'Natural wonder',
+                culturalTip: 'Visit early morning or late afternoon to avoid crowds',
+                saved: false
+            },
+            {
+                id: 'loc_5',
+                name: 'Theth National Park',
+                description: 'Remote mountain village in the Accursed Mountains. Home to the Lock-in Tower.',
+                emoji: '⛰️',
+                time: 'Full day+',
+                match: 97,
+                crowd: 'Quiet',
+                category: 'nature',
+                location: 'Albanian Alps',
+                period: 'Ancient traditions',
+                culturalTip: 'The Kanun (traditional law) still influences life here',
+                saved: false
+            },
+            {
+                id: 'loc_6',
+                name: 'Apollonia Archaeological Park',
+                description: 'One of the most important ancient cities, founded in 588 BCE.',
+                emoji: '🏺',
+                time: '2-3 hours',
+                match: 92,
+                crowd: 'Quiet',
+                category: 'history',
+                location: 'Fier',
+                period: 'Greek-Roman',
+                culturalTip: 'The Monastery of St. Mary within the site has a small museum',
+                saved: false
+            },
+            {
+                id: 'loc_7',
+                name: 'Ksamil Islands',
+                description: 'Stunning white sand beaches with crystal water. The "Albanian Maldives."',
+                emoji: '🏝️',
+                time: 'Full day',
+                match: 99,
+                crowd: 'Very crowded',
+                category: 'beach',
+                location: 'Ksamil',
+                period: 'Natural beauty',
+                culturalTip: 'Visit the islands by kayak early morning',
+                saved: false
+            },
+            {
+                id: 'loc_8',
+                name: 'Rozafa Castle',
+                description: 'Legendary castle overlooking Shkodër. Named after the woman walled into its foundations.',
+                emoji: '🏯',
+                time: '2 hours',
+                match: 91,
+                crowd: 'Moderate',
+                category: 'history',
+                location: 'Shkodër',
+                period: 'Illyrian-Venetian-Ottoman',
+                culturalTip: 'Stay for sunset - the view over Lake Shkodër is magical',
+                saved: false
+            }
+        ];
+
+        let currentFilter = 'all';
+        let savedItems = JSON.parse(localStorage.getItem('albanianSavedItems')) || [];
+
+        // Load profile
+        const profile = JSON.parse(localStorage.getItem('currentProfile')) || {
+            interests: 'history',
+            groupType: 'solo',
+            pace: 'moderate',
+            duration: 'medium'
+        };
+
+        document.getElementById('profile-summary').textContent = 
+            `${profile.interests} lover · ${profile.duration} stay · ${profile.pace} pace`;
+
+        // Determine category
+        function getCategory() {
+            if (profile.pace === 'slow') {
+                return {
+                    emoji: '❤️',
+                    title: 'Heritage Guardian',
+                    message: 'We\'ll ensure you experience Albania deeply and comfortably.',
+                    badge: 'Special Access'
+                };
+            } else if (profile.duration === 'short' || profile.pace === 'fast') {
+                return {
+                    emoji: '⚡',
+                    title: 'Essential Explorer',
+                    message: 'We\'ve curated the must-see Albanian highlights for your timeframe.',
+                    badge: 'Best of Albania'
+                };
+            } else {
+                return {
+                    emoji: '🌿',
+                    title: 'Free Spirit Explorer',
+                    message: 'You have time to discover Albania\'s hidden corners and traditions.',
+                    badge: 'Hidden Albania'
+                };
+            }
+        }
+
+        const category = getCategory();
+        document.getElementById('category-emoji').textContent = category.emoji;
+        document.getElementById('category-title').textContent = category.title;
+        document.getElementById('category-message').textContent = category.message;
+        document.getElementById('category-badge').textContent = category.badge;
+
+        // Mark saved items
+        locations.forEach(loc => {
+            loc.saved = savedItems.some(item => item.locationId === loc.id);
+        });
+
+        // Render recommendations
+        function renderRecommendations() {
+            const container = document.getElementById('recommendations-container');
+            container.innerHTML = '';
+
+            const filtered = currentFilter === 'all' 
+                ? locations 
+                : locations.filter(l => l.category === currentFilter);
+
+            filtered.forEach(loc => {
+                container.innerHTML += `
+                    <div class="result-card bg-white rounded-2xl shadow-lg overflow-hidden ${loc.saved ? 'saved' : ''}" data-id="${loc.id}">
+                        <div class="p-6">
+                            <div class="flex items-start justify-between mb-3">
+                                <span class="text-4xl">${loc.emoji}</span>
+                                <span class="bg-red-600 text-white px-2 py-1 rounded-full text-xs font-bold">
+                                    ${loc.match}% match
+                                </span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-1">${loc.name}</h3>
+                            <p class="text-gray-500 text-xs mb-2">📍 ${loc.location} · ${loc.period}</p>
+                            <p class="text-gray-600 text-sm mb-4">${loc.description}</p>
+                            
+                            <div class="flex items-center justify-between text-sm mb-3">
+                                <span class="flex items-center text-gray-500">
+                                    <span class="mr-1">⏱️</span> ${loc.time}
+                                </span>
+                                <span class="flex items-center ${loc.crowd === 'Quiet' ? 'text-green-500' : loc.crowd === 'Moderate' ? 'text-orange-500' : 'text-red-500'}">
+                                    <span class="mr-1">👥</span> ${loc.crowd}
+                                </span>
+                            </div>
+                            
+                            <div class="bg-amber-50 rounded-lg p-3 mb-4 text-sm">
+                                <span class="font-medium">💡 Tip:</span> ${loc.culturalTip}
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="toggleSave('${loc.id}')" class="save-btn flex-1 ${loc.saved ? 'saved bg-green-500 text-white' : 'bg-red-50 text-red-600'} py-2 rounded-xl font-medium hover:bg-red-100 transition">
+                                    ${loc.saved ? '✓ Saved' : '♥ Save'}
+                                </button>
+                                <button onclick="showDetails('${loc.id}')" class="w-10 h-10 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition">
+                                    ℹ️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Toggle save
+        window.toggleSave = function(locationId) {
+            const loc = locations.find(l => l.id === locationId);
+            const index = savedItems.findIndex(item => item.locationId === locationId);
+            
+            if (index === -1) {
+                // Save
+                savedItems.push({
+                    id: 'saved_' + Date.now(),
+                    locationId,
+                    name: loc.name,
+                    emoji: loc.emoji,
+                    savedAt: new Date().toISOString()
+                });
+                loc.saved = true;
+                showNotification('✨ Added to your Albanian journey', 'success');
+            } else {
+                // Remove
+                savedItems.splice(index, 1);
+                loc.saved = false;
+                showNotification('Removed from your list', 'info');
+            }
+            
+            localStorage.setItem('albanianSavedItems', JSON.stringify(savedItems));
+            renderRecommendations();
+        };
+
+        // Show details
+        window.showDetails = function(locationId) {
+            const loc = locations.find(l => l.id === locationId);
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-3xl max-w-lg mx-4 p-8">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-6xl">${loc.emoji}</span>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">✕</button>
+                    </div>
+                    <h2 class="text-3xl font-bold mb-2">${loc.name}</h2>
+                    <p class="text-gray-500 mb-4">📍 ${loc.location} · ${loc.period}</p>
+                    <p class="text-gray-700 mb-6">${loc.description}</p>
+                    
+                    <div class="bg-amber-50 rounded-xl p-4 mb-6">
+                        <h3 class="font-bold mb-2">💡 Cultural Insight</h3>
+                        <p>${loc.culturalTip}</p>
+                    </div>
+                    
+                    <button onclick="toggleSave('${loc.id}'); this.closest('.fixed').remove()" 
+                            class="w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition">
+                        ${loc.saved ? '✓ Saved' : '♥ Save to My Trip'}
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        };
+
+        // Filter
+        window.filterCategory = function(category) {
+            currentFilter = category;
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-red-600', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('active', 'bg-red-600', 'text-white');
+            
+            renderRecommendations();
+        };
+
+        // Refresh
+        window.refreshRecommendations = function() {
+            locations.forEach(loc => {
+                loc.match = 85 + Math.floor(Math.random() * 15);
+            });
+            renderRecommendations();
+            showNotification('✨ Recommendations refreshed!', 'success');
+        };
+
+        // Share
+        window.shareJourney = function() {
+            const text = `🇦🇱 I'm exploring Albania's heritage with TRIAGE! Join me in discovering the Land of Eagles.`;
+            
+            if (navigator.share) {
+                navigator.share({ title: 'My Albanian Journey', text, url: window.location.origin });
+            } else {
+                navigator.clipboard.writeText(text);
+                alert('📋 Copied to clipboard!');
+            }
+        };
+
+        // Notification
+        function showNotification(message, type) {
+            const notif = document.createElement('div');
+            notif.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-50 text-white font-medium ${
+                type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+            }`;
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 2000);
+        }
+
+        // Initialize
+        renderRecommendations();
+
+
+        // Add this to your triage-results.html
+window.toggleSave = function(locationId) {
+    const loc = locations.find(l => l.id === locationId);
+    
+    // Load current saved items
+    let savedItems = JSON.parse(localStorage.getItem('albanianSavedItems')) || [];
+    
+    // Check if already saved
+    const existingIndex = savedItems.findIndex(item => 
+        item.id === locationId || item.locationId === locationId
+    );
+    
+    if (existingIndex === -1) {
+        // Save new item with all needed fields
+        const savedItem = {
+            id: 'saved_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            locationId: locationId,
+            name: loc.name,
+            title: loc.name, // For compatibility
+            emoji: loc.emoji,
+            location: loc.location,
+            description: loc.description,
+            savedAt: new Date().toISOString()
+        };
+        
+        savedItems.push(savedItem);
+        localStorage.setItem('albanianSavedItems', JSON.stringify(savedItems));
+        
+        // Update UI
+        loc.saved = true;
+        showNotification('✨ Added to your saved places!', 'success');
+        
+    } else {
+        // Remove from saved
+        savedItems.splice(existingIndex, 1);
+        localStorage.setItem('albanianSavedItems', JSON.stringify(savedItems));
+        
+        // Update UI
+        loc.saved = false;
+        showNotification('Removed from saved places', 'info');
+    }
+    
+    // Re-render current view
+    renderRecommendations();
+};
+    </script>
+    
+</body>
+</html>
+

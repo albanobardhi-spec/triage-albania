@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIAGE · Loading Your Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #e11d48;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen">
+
+    <div class="container mx-auto px-4 py-12 max-w-md">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-block bg-white shadow-xl rounded-full p-4 mb-4 border-4 border-red-500">
+                <span class="text-6xl">🇦🇱</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">TRIAGE Albania</h1>
+        </div>
+
+        <!-- Loading Card -->
+        <div class="bg-white rounded-3xl shadow-2xl p-8 text-center" id="loading-card">
+            <div class="loader mx-auto mb-6"></div>
+            <h2 class="text-2xl font-bold mb-2" id="status-title">Loading Your Journey</h2>
+            <p class="text-gray-500 mb-6" id="status-message">Please wait while we load your Albanian adventure...</p>
+            
+            <!-- Progress -->
+            <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
+                <div class="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-500" id="progress-bar" style="width: 30%"></div>
+            </div>
+            
+            <!-- Session Info -->
+            <div class="bg-amber-50 rounded-xl p-4 text-sm text-left">
+                <p class="font-medium">📱 Session ID:</p>
+                <p class="text-gray-600 font-mono text-xs break-all" id="session-id">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Manual Code Entry Option -->
+        <div class="mt-6 text-center">
+            <button onclick="showManualEntry()" class="text-red-600 text-sm hover:underline">
+                Having trouble scanning? Enter code manually
+            </button>
+        </div>
+
+        <!-- Manual Entry Card (hidden) -->
+        <div id="manual-entry" class="bg-white rounded-3xl shadow-2xl p-8 text-center hidden mt-4">
+            <span class="text-4xl block mb-4">⌨️</span>
+            <h2 class="text-2xl font-bold mb-4">Enter Session Code</h2>
+            <input type="text" id="manual-code" placeholder="e.g., SESS_1234" class="w-full px-4 py-3 border rounded-xl mb-4 text-center font-mono uppercase">
+            <button onclick="loadManualSession()" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700">
+                Load Session
+            </button>
+        </div>
+
+        <!-- Success Card -->
+        <div class="bg-white rounded-3xl shadow-2xl p-8 text-center hidden" id="success-card">
+            <span class="text-7xl block mb-4 animate-bounce">✨</span>
+            <h2 class="text-2xl font-bold mb-2">Journey Loaded!</h2>
+            <p class="text-gray-500 mb-6">Your Albanian adventure is ready on your phone</p>
+            
+            <div class="space-y-4 mb-8">
+                <div class="flex items-center p-3 bg-green-50 rounded-xl">
+                    <span class="text-2xl mr-3">✅</span>
+                    <span class="font-medium">Profile synced</span>
+                </div>
+                <div class="flex items-center p-3 bg-green-50 rounded-xl">
+                    <span class="text-2xl mr-3">📍</span>
+                    <span class="font-medium">Recommendations ready</span>
+                </div>
+            </div>
+            
+            <a href="triage-results.html" class="block bg-gradient-to-r from-red-600 to-red-700 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl transition">
+                Start Exploring →
+            </a>
+        </div>
+
+        <!-- Error Card -->
+        <div class="bg-white rounded-3xl shadow-2xl p-8 text-center hidden" id="error-card">
+            <span class="text-7xl block mb-4">😕</span>
+            <h2 class="text-2xl font-bold mb-2">Session Expired</h2>
+            <p class="text-gray-500 mb-6">This QR code has expired or is invalid</p>
+            <a href="index.html" class="block bg-gray-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-700 transition">
+                Return to Kiosk
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Get session ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session');
+        
+        // Elements
+        const loadingCard = document.getElementById('loading-card');
+        const successCard = document.getElementById('success-card');
+        const errorCard = document.getElementById('error-card');
+        const manualEntry = document.getElementById('manual-entry');
+        const statusTitle = document.getElementById('status-title');
+        const statusMessage = document.getElementById('status-message');
+        const progressBar = document.getElementById('progress-bar');
+        const sessionIdEl = document.getElementById('session-id');
+
+        // Update progress
+        function updateProgress(percent, title, message) {
+            progressBar.style.width = percent + '%';
+            if (title) statusTitle.textContent = title;
+            if (message) statusMessage.textContent = message;
+        }
+
+        // Show manual entry
+        window.showManualEntry = function() {
+            manualEntry.classList.remove('hidden');
+        };
+
+        // Load session by ID
+        function loadSession(sessionId) {
+            if (!sessionId) {
+                loadingCard.classList.add('hidden');
+                errorCard.classList.remove('hidden');
+                return;
+            }
+            
+            sessionIdEl.textContent = sessionId;
+            
+            try {
+                updateProgress(30, 'Validating Session', 'Checking your QR code...');
+                
+                // Get session from localStorage
+                const sessionData = localStorage.getItem(`session_${sessionId}`);
+                
+                if (!sessionData) {
+                    // Try without prefix
+                    const allSessions = Object.keys(localStorage)
+                        .filter(key => key.startsWith('session_'))
+                        .map(key => ({
+                            id: key.replace('session_', ''),
+                            data: JSON.parse(localStorage.getItem(key))
+                        }));
+                    
+                    const found = allSessions.find(s => s.id === sessionId || s.id.includes(sessionId));
+                    
+                    if (!found) {
+                        throw new Error('Session not found');
+                    }
+                    
+                    updateProgress(60, 'Loading Your Profile', 'Fetching your preferences...');
+                    
+                    // Save to current session
+                    localStorage.setItem('currentProfile', JSON.stringify(found.data.profile));
+                    
+                    if (found.data.savedItems) {
+                        localStorage.setItem('albanianSavedItems', JSON.stringify(found.data.savedItems));
+                    }
+                    
+                    updateProgress(100, 'Success!', 'Your journey is ready');
+                    
+                    // Show success
+                    setTimeout(() => {
+                        loadingCard.classList.add('hidden');
+                        successCard.classList.remove('hidden');
+                    }, 500);
+                    
+                    return;
+                }
+                
+                updateProgress(60, 'Loading Your Profile', 'Fetching your preferences...');
+                
+                const session = JSON.parse(sessionData);
+                
+                // Save to localStorage
+                localStorage.setItem('currentProfile', JSON.stringify(session.profile));
+                
+                if (session.savedItems) {
+                    localStorage.setItem('albanianSavedItems', JSON.stringify(session.savedItems));
+                }
+                
+                updateProgress(100, 'Success!', 'Your journey is ready');
+                
+                // Show success
+                setTimeout(() => {
+                    loadingCard.classList.add('hidden');
+                    successCard.classList.remove('hidden');
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error loading session:', error);
+                updateProgress(100, 'Error', 'Session not found');
+                setTimeout(() => {
+                    loadingCard.classList.add('hidden');
+                    errorCard.classList.remove('hidden');
+                }, 1000);
+            }
+        }
+
+        // Load manual session
+        window.loadManualSession = function() {
+            const code = document.getElementById('manual-code').value.trim().toUpperCase();
+            if (code) {
+                loadSession(code);
+            } else {
+                alert('Please enter a session code');
+            }
+        };
+
+        // Start loading
+        if (sessionId) {
+            loadSession(sessionId);
+        } else {
+            // No session ID - show manual entry
+            loadingCard.classList.add('hidden');
+            manualEntry.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

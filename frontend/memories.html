@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIAGE · My Albanian Memories</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .memory-card {
+            transition: all 0.3s ease;
+            background: white;
+            transform-origin: center;
+        }
+        .memory-card:hover {
+            transform: scale(1.02) rotate(0.5deg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .memory-date {
+            background: linear-gradient(135deg, #e11d48, #b45309);
+        }
+        @keyframes polaroid {
+            0%, 100% { transform: rotate(-1deg); }
+            50% { transform: rotate(1deg); }
+        }
+        .polaroid-effect {
+            animation: polaroid 5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-amber-50">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-red-600 to-black-600 text-white py-3">
+        <div class="container mx-auto px-4 flex items-center">
+            <span class="text-2xl mr-3">🇦🇱</span>
+            <span class="font-medium">Your Albanian story, beautifully preserved</span>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="inline-block bg-white shadow-xl rounded-full p-4 mb-4 border-4 border-red-500">
+                <span class="text-7xl">📸</span>
+            </div>
+            <h1 class="text-5xl font-black mb-2 bg-gradient-to-r from-red-600 to-black-600 text-transparent bg-clip-text">
+                My Albanian Memories
+            </h1>
+            <p class="text-xl text-gray-600">Every moment in the Land of Eagles</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-4 mb-12">
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-4 text-center">
+                <span class="text-3xl block mb-1">📷</span>
+                <span class="text-2xl font-bold" id="photo-count">0</span>
+                <span class="text-gray-500">Moments</span>
+            </div>
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-4 text-center">
+                <span class="text-3xl block mb-1">📍</span>
+                <span class="text-2xl font-bold" id="place-count">0</span>
+                <span class="text-gray-500">Places</span>
+            </div>
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-4 text-center">
+                <span class="text-3xl block mb-1">🏺</span>
+                <span class="text-2xl font-bold" id="heritage-memories">0</span>
+                <span class="text-gray-500">Heritage spots</span>
+            </div>
+        </div>
+
+        <!-- Memory Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12" id="memories-grid">
+            <!-- Memories injected here -->
+        </div>
+
+        <!-- Add Memory Button -->
+        <div class="text-center">
+            <button onclick="addAlbanianMemory()" class="bg-gradient-to-r from-red-600 to-red-700 text-white px-10 py-4 rounded-full text-xl font-bold shadow-xl hover:shadow-2xl transform hover:scale-105 transition inline-flex items-center">
+                <span class="text-2xl mr-2">➕</span>
+                Add Today's Albanian Memory
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Albanian memories
+        let memories = JSON.parse(localStorage.getItem('albanianMemories')) || [
+            {
+                id: 1,
+                date: 'Today',
+                location: 'Butrint',
+                title: 'Walking Through History',
+                description: '2500 years of civilizations - Greek, Roman, Byzantine. The lion gate took my breath away.',
+                emoji: '🏛️',
+                mood: '✨ Awe-inspired',
+                photos: ['🏛️', '🦁', '🏺'],
+                tags: ['unesco', 'ancient']
+            },
+            {
+                id: 2,
+                date: 'Yesterday',
+                location: 'Berat',
+                title: 'City of a Thousand Windows',
+                description: 'Woke up in a 400-year-old Ottoman house. The view from the castle at sunset was magical.',
+                emoji: '🏘️',
+                mood: '😌 Peaceful',
+                photos: ['🏘️', '🌙', '✨'],
+                tags: ['ottoman', 'architecture']
+            },
+            {
+                id: 3,
+                date: '3 days ago',
+                location: 'Theth',
+                title: 'Accursed Mountains Paradise',
+                description: 'Hiked to the Blue Eye of Theth. Stayed with a local family who fed us like royalty.',
+                emoji: '⛰️',
+                mood: '💪 Adventurous',
+                photos: ['⛰️', '💧', '🏔️'],
+                tags: ['mountains', 'hiking']
+            }
+        ];
+
+        // Render memories
+        function renderMemories() {
+            const grid = document.getElementById('memories-grid');
+            grid.innerHTML = '';
+            
+            memories.forEach(memory => {
+                grid.innerHTML += `
+                    <div class="memory-card rounded-3xl shadow-xl p-6 polaroid-effect">
+                        <div class="flex items-start justify-between mb-4">
+                            <span class="text-6xl">${memory.emoji}</span>
+                            <span class="memory-date text-white text-sm px-3 py-1 rounded-full">
+                                ${memory.date}
+                            </span>
+                        </div>
+                        
+                        <h3 class="text-2xl font-bold mb-1">${memory.title}</h3>
+                        <p class="text-gray-500 text-sm mb-2">📍 ${memory.location}</p>
+                        <p class="text-gray-700 mb-4">${memory.description}</p>
+                        
+                        <div class="flex gap-2 mb-4">
+                            ${memory.photos.map(photo => `
+                                <div class="w-12 h-12 bg-gradient-to-br from-red-100 to-yellow-100 rounded-xl flex items-center justify-center text-2xl">
+                                    ${photo}
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            ${memory.tags.map(tag => `
+                                <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs">#${tag}</span>
+                            `).join('')}
+                        </div>
+                        
+                        <div class="flex items-center justify-between pt-4 border-t">
+                            <span class="text-sm text-gray-500">Mood: ${memory.mood}</span>
+                            <button onclick="deleteMemory(${memory.id})" class="text-gray-400 hover:text-red-600">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Update stats
+            document.getElementById('photo-count').textContent = memories.length * 3;
+            document.getElementById('place-count').textContent = new Set(memories.map(m => m.location)).size;
+            document.getElementById('heritage-memories').textContent = memories.filter(m => 
+                m.tags.includes('unesco') || m.tags.includes('ancient')
+            ).length;
+        }
+
+        // Add new memory
+        window.addAlbanianMemory = function() {
+            const locations = ['Butrint', 'Berat', 'Gjirokastër', 'Theth', 'Ksamil', 'Tirana'];
+            const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+            
+            const newMemory = {
+                id: Date.now(),
+                date: 'Just now',
+                location: randomLocation,
+                title: `New memory in ${randomLocation}`,
+                description: 'Another beautiful moment in Albania...',
+                emoji: randomLocation === 'Butrint' ? '🏛️' : 
+                       randomLocation === 'Theth' ? '⛰️' : 
+                       randomLocation === 'Ksamil' ? '🏖️' : '📍',
+                mood: '✨ Magical',
+                photos: ['📸', '✨', '🇦🇱'],
+                tags: ['new', randomLocation.toLowerCase()]
+            };
+            
+            memories.unshift(newMemory);
+            localStorage.setItem('albanianMemories', JSON.stringify(memories));
+            renderMemories();
+            showNotification('📸 Memory saved!');
+        };
+
+        // Delete memory
+        window.deleteMemory = function(id) {
+            if (confirm('Delete this memory?')) {
+                memories = memories.filter(m => m.id !== id);
+                localStorage.setItem('albanianMemories', JSON.stringify(memories));
+                renderMemories();
+                showNotification('Memory deleted');
+            }
+        };
+
+        // Show notification
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl z-50';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 2000);
+        }
+
+        // Initialize
+        renderMemories();
+    </script>
+</body>
+</html>

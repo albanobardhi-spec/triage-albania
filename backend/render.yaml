@@ -1,0 +1,19 @@
+# backend/render.yaml
+services:
+  - type: web
+    name: triage-backend
+    runtime: node
+    repo: https://github.com/YOUR_USERNAME/triage-albania.git
+    plan: free
+    branch: main
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: JWT_SECRET
+        generateValue: true
+    autoDeploy: true
