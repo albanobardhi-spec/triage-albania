@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIAGE · Discover Albania</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
+    <style>
+        .hero-pattern {
+            background-color: #fef2f2;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e11d48' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .modal { transition: opacity 0.3s ease; }
+        .toast { animation: slideUp 0.3s ease; }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="hero-pattern min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-sm shadow-sm fixed w-full z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <span class="text-3xl">🇦🇱</span>
+                <span class="font-bold text-xl text-gray-800">TRIAGE</span>
+            </div>
+            <div id="nav-buttons" class="flex items-center space-x-4">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 pt-24 pb-12">
+        <div class="text-center mb-12">
+            <div class="inline-block bg-white shadow-xl rounded-full p-4 mb-6 border-4 border-red-500">
+                <span class="text-7xl">🦅</span>
+            </div>
+            <h1 class="text-6xl font-black mb-4 bg-gradient-to-r from-red-600 to-black-800 text-transparent bg-clip-text">
+                Discover the Land of Eagles
+            </h1>
+            <p class="text-2xl text-gray-600 max-w-3xl mx-auto mb-8">
+                4000 years of history. Untouched nature. Warm hospitality.
+                Let TRIAGE guide you through Albania's hidden treasures.
+            </p>
+            
+            <!-- Stats -->
+            <div class="flex justify-center space-x-8 mb-12">
+                <div class="text-center">
+                    <span class="text-3xl font-bold text-red-600" id="visitor-count">12,847</span>
+                    <p class="text-gray-500">Happy Travelers</p>
+                </div>
+                <div class="text-center">
+                    <span class="text-3xl font-bold text-red-600" id="heritage-count">24</span>
+                    <p class="text-gray-500">Heritage Sites</p>
+                </div>
+                <div class="text-center">
+                    <span class="text-3xl font-bold text-red-600" id="achievement-count">156</span>
+                    <p class="text-gray-500">Badges Earned</p>
+                </div>
+            </div>
+            
+            <!-- CTA Buttons -->
+            <div class="flex flex-wrap gap-4 justify-center">
+                <a href="profile.html?kiosk=true" class="bg-gradient-to-r from-red-600 to-red-700 text-white text-xl font-bold py-4 px-10 rounded-full hover:shadow-2xl transition transform hover:scale-105">
+                    🏛️ Start Your Journey
+                </a>
+                <button onclick="playCulturalTip()" class="bg-white text-red-600 text-xl font-bold py-4 px-10 rounded-full hover:shadow-xl transition border-2 border-red-200">
+                    🎵 Hear Cultural Tip
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Welcome Back</h2>
+                <button onclick="closeModal('login-modal')" class="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Email</label>
+                    <input type="email" id="login-email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-300">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="login-password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-300">
+                </div>
+                <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition">
+                    Login
+                </button>
+            </form>
+            <p class="text-center text-sm text-gray-500 mt-4">
+                Don't have an account? 
+                <button onclick="switchToRegister()" class="text-red-600 hover:underline">Sign up</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="register-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Join the Adventure</h2>
+                <button onclick="closeModal('register-modal')" class="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+            </div>
+            <form onsubmit="handleRegister(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Name</label>
+                    <input type="text" id="register-name" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-300">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Email</label>
+                    <input type="email" id="register-email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-300">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Country</label>
+                    <input type="text" id="register-country" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-300">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="register-password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-red-300">
+                </div>
+                <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition">
+                    Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-50 hidden toast"></div>
+
+    <!-- ==================== SELF-CONTAINED JAVASCRIPT ==================== -->
+    <script>
+        // ============================================
+        // API CONFIGURATION - HARDCODED FOR RELIABILITY
+        // ============================================
+        const API_BASE = 'https://triage-albania.onrender.com';
+        
+        // ============================================
+        // TOAST NOTIFICATIONS
+        // ============================================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = type === 'success' ? '✅ ' + message : '❌ ' + message;
+            toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl z-50 toast ${
+                type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+            }`;
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // ============================================
+        // USER MANAGEMENT
+        // ============================================
+        let currentUser = JSON.parse(localStorage.getItem('triage_current_user') || 'null');
+        let authToken = localStorage.getItem('triage_token');
+        
+        // Update navigation based on login state
+        function updateNavigation() {
+            const navButtons = document.getElementById('nav-buttons');
+            
+            if (currentUser) {
+                navButtons.innerHTML = `
+                    <span class="text-gray-600">Welcome, ${currentUser.name}!</span>
+                    <button onclick="logout()" class="text-red-600 hover:text-red-800">Logout</button>
+                `;
+            } else {
+                navButtons.innerHTML = `
+                    <button onclick="openModal('login-modal')" class="text-gray-600 hover:text-red-600">Login</button>
+                    <button onclick="openModal('register-modal')" class="bg-red-600 text-white px-4 py-2 rounded-full text-sm hover:bg-red-700">Sign Up</button>
+                `;
+            }
+        }
+        
+        // ============================================
+        // MODAL FUNCTIONS
+        // ============================================
+        window.openModal = function(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        };
+        
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        };
+        
+        window.switchToRegister = function() {
+            closeModal('login-modal');
+            openModal('register-modal');
+        };
+        
+        window.switchToLogin = function() {
+            closeModal('register-modal');
+            openModal('login-modal');
+        };
+        
+        // ============================================
+        // API FUNCTIONS
+        // ============================================
+        async function apiRequest(endpoint, options = {}) {
+            const url = `${API_BASE}${endpoint}`;
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                ...options.headers
+            };
+            
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers,
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                const text = await response.text();
+                let data;
+                try {
+                    data = text ? JSON.parse(text) : {};
+                } catch (e) {
+                    data = { message: text };
+                }
+                
+                if (!response.ok) {
+                    throw new Error(data.error || data.message || `HTTP ${response.status}`);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+        
+        // ============================================
+        // AUTH FUNCTIONS
+        // ============================================
+        window.handleLogin = async function(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            try {
+                const data = await apiRequest('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (data.success) {
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('triage_token', data.token);
+                    localStorage.setItem('triage_current_user', JSON.stringify(data.user));
+                    
+                    showToast(`Welcome back, ${data.user.name}!`, 'success');
+                    closeModal('login-modal');
+                    updateNavigation();
+                    
+                    // Clear form
+                    document.getElementById('login-email').value = '';
+                    document.getElementById('login-password').value = '';
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        };
+        
+        window.handleRegister = async function(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const country = document.getElementById('register-country').value || '';
+            
+            try {
+                const data = await apiRequest('/api/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ email, password, name, country })
+                });
+                
+                if (data.success) {
+                    authToken = data.token;
+                    currentUser = data.user;
+                    localStorage.setItem('triage_token', data.token);
+                    localStorage.setItem('triage_current_user', JSON.stringify(data.user));
+                    
+                    showToast(`Welcome to TRIAGE, ${data.user.name}!`, 'success');
+                    closeModal('register-modal');
+                    updateNavigation();
+                    
+                    // Clear form
+                    document.getElementById('register-name').value = '';
+                    document.getElementById('register-email').value = '';
+                    document.getElementById('register-password').value = '';
+                    document.getElementById('register-country').value = '';
+                }
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        };
+        
+        window.logout = function() {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('triage_token');
+            localStorage.removeItem('triage_current_user');
+            showToast('Logged out successfully', 'success');
+            updateNavigation();
+        };
+        
+        // ============================================
+        // VOICE FUNCTIONS
+        // ============================================
+        window.playCulturalTip = function() {
+            if (!window.speechSynthesis) {
+                showToast('Speech not supported in your browser', 'error');
+                return;
+            }
+            
+            const tips = [
+                'In Albania, nodding your head means "no" and shaking means "yes" - it\'s the opposite of most countries!',
+                'Coffee culture is sacred here - never rush a coffee meeting with locals.',
+                'When invited to someone\'s home, bring a small gift like sweets or flowers.',
+                'The double-headed eagle on the flag represents the north and south of Albania.',
+                'Besa is the Albanian code of honor - keeping promises is sacred.'
+            ];
+            
+            const tip = tips[Math.floor(Math.random() * tips.length)];
+            const utterance = new SpeechSynthesisUtterance(tip);
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        };
+        
+        // ============================================
+        // HEALTH CHECK
+        // ============================================
+        async function checkAPIHealth() {
+            try {
+                const data = await apiRequest('/api/health');
+                console.log('✅ API Health OK:', data);
+                
+                // Update stats
+                if (data.stats) {
+                    document.getElementById('visitor-count').textContent = (12000 + (data.stats.users || 0)).toLocaleString();
+                    document.getElementById('heritage-count').textContent = data.stats.locations || 24;
+                }
+            } catch (error) {
+                console.warn('⚠️ API Health Check Failed:', error.message);
+                // Use default values
+                document.getElementById('visitor-count').textContent = '12,847';
+                document.getElementById('heritage-count').textContent = '24';
+            }
+        }
+        
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 App starting...');
+            updateNavigation();
+            checkAPIHealth();
+            
+            // Play welcome greeting after 2 seconds
+            setTimeout(() => {
+                if (window.speechSynthesis && !currentUser) {
+                    const greeting = 'Welcome to TRIAGE Albania, the Land of Eagles.';
+                    const utterance = new SpeechSynthesisUtterance(greeting);
+                    utterance.rate = 0.9;
+                    window.speechSynthesis.speak(utterance);
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
