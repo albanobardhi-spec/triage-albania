@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRIAGE · Build Your Profile</title>
+    <title>TRIAGE · Build Your Albanian Profile</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Use a reliable QR library -->
+    <!-- QR Code Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <!-- Backup QR Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
         .option-card {
             transition: all 0.2s ease;
@@ -43,17 +41,15 @@
             border-radius: 16px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
-        .qr-fallback {
-            background: #f3f4f6;
-            padding: 20px;
-            border-radius: 12px;
-            font-family: monospace;
-            word-break: break-all;
-            max-width: 100%;
-            overflow-x: auto;
+        .toast {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translate(-50%, -100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
         }
     </style>
-    <script src="js/config.js"></script>      <!-- MUST come first -->
+       <script src="js/config.js"></script>      <!-- MUST come first -->
     <script src="js/api-client.js"></script>  <!-- Then this -->
     <script src="js/app.js"></script>         <!-- Then your app -->
 </head>
@@ -61,13 +57,15 @@
 
     <!-- Kiosk Mode Indicator -->
     <div id="kiosk-banner" class="bg-red-600 text-white py-2 text-center hidden">
-        <span class="text-xl mr-2">🖥️</span>
-        Kiosk Mode - Your session will be saved with QR code
+        <div class="container mx-auto px-4 flex items-center justify-center">
+            <span class="text-xl mr-2">🖥️</span>
+            <span class="font-medium">Kiosk Mode - Your session will be saved with QR code</span>
+        </div>
     </div>
 
     <div class="container mx-auto px-4 py-8 max-w-2xl">
         
-        <!-- Progress -->
+        <!-- Progress Bar -->
         <div class="mb-8">
             <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-red-600" id="step-indicator">Question 1 of 5</span>
@@ -80,10 +78,10 @@
 
         <!-- Quiz Container -->
         <div id="quiz-container" class="bg-white rounded-3xl shadow-xl p-8 mb-6">
-            <!-- Questions injected by JS -->
+            <!-- Questions injected by JavaScript -->
         </div>
 
-        <!-- Navigation -->
+        <!-- Navigation Buttons -->
         <div class="flex justify-between">
             <button id="prev-btn" class="px-6 py-3 bg-gray-100 text-gray-500 rounded-full font-medium hover:bg-gray-200 transition disabled:opacity-30" disabled>
                 ← Back
@@ -93,7 +91,7 @@
             </button>
         </div>
 
-        <!-- QR Code Section (shown after completion) -->
+        <!-- QR Code Section (shown after completion in kiosk mode) -->
         <div id="qr-section" class="mt-8 hidden">
             <div class="bg-white rounded-2xl p-6 text-center">
                 <h3 class="text-2xl font-bold mb-2">📱 Scan to Continue on Your Phone</h3>
@@ -122,10 +120,27 @@
                 </button>
             </div>
         </div>
+
+        <!-- Success Message (shown after completion in normal mode) -->
+        <div id="success-section" class="mt-8 hidden">
+            <div class="bg-green-50 border-2 border-green-500 rounded-2xl p-6 text-center">
+                <span class="text-5xl block mb-4">✨</span>
+                <h3 class="text-2xl font-bold text-green-700 mb-2">Profile Complete!</h3>
+                <p class="text-gray-600 mb-4">Your Albanian adventure awaits</p>
+                <a href="triage-results.html" class="inline-block bg-green-600 text-white px-8 py-3 rounded-full font-bold hover:bg-green-700 transition">
+                    View Your Recommendations →
+                </a>
+            </div>
+        </div>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-50"></div>
+
     <script>
-        // ==================== QUESTIONS ====================
+        // ============================================
+        // QUESTIONS DATABASE
+        // ============================================
         const questions = [
             {
                 question: "What calls to your spirit in Albania?",
@@ -180,17 +195,57 @@
             }
         ];
 
+        // ============================================
+        // TOAST SYSTEM
+        // ============================================
+        const Toast = {
+            container: document.getElementById('toast-container'),
+            
+            show: function(message, type = 'info', duration = 3000) {
+                const toast = document.createElement('div');
+                const bgColor = type === 'success' ? 'bg-green-600' : 
+                               type === 'error' ? 'bg-red-600' : 
+                               'bg-blue-600';
+                
+                toast.className = `${bgColor} text-white px-6 py-3 rounded-full shadow-2xl mb-3 toast`;
+                toast.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="mr-2">${type === 'success' ? '✅' : 
+                                            type === 'error' ? '❌' : 'ℹ️'}</span>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                this.container.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.3s';
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            },
+            
+            success: function(message) { this.show(message, 'success'); },
+            error: function(message) { this.show(message, 'error'); },
+            info: function(message) { this.show(message, 'info'); }
+        };
+
+        // ============================================
+        // QUIZ STATE
+        // ============================================
         let currentQuestion = 0;
         let answers = [];
         const urlParams = new URLSearchParams(window.location.search);
         const isKiosk = urlParams.has('kiosk');
 
-        // Show kiosk banner
+        // Show kiosk banner if in kiosk mode
         if (isKiosk) {
             document.getElementById('kiosk-banner').classList.remove('hidden');
         }
 
-        // Update progress bar
+        // ============================================
+        // QUIZ FUNCTIONS
+        // ============================================
         function updateProgress() {
             const percent = ((currentQuestion + 1) / questions.length) * 100;
             document.getElementById('progress-bar').style.width = percent + '%';
@@ -198,7 +253,6 @@
             document.getElementById('step-indicator').textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
         }
 
-        // Render current question
         function renderQuestion() {
             const q = questions[currentQuestion];
             const container = document.getElementById('quiz-container');
@@ -229,14 +283,17 @@
             // Add click handlers
             document.querySelectorAll('.option-card').forEach(card => {
                 card.addEventListener('click', function() {
+                    // Remove selected from all
                     document.querySelectorAll('.option-card').forEach(c => {
                         c.classList.remove('selected', 'border-red-500', 'bg-red-50');
                     });
                     
+                    // Add selected to this
                     this.classList.add('selected', 'border-red-500', 'bg-red-50');
                     this.classList.add('bounce-on-select');
                     setTimeout(() => this.classList.remove('bounce-on-select'), 300);
                     
+                    // Update checkmark
                     document.querySelectorAll('.option-card span:last-child').forEach(s => {
                         if (s.textContent === '✓') s.remove();
                     });
@@ -246,9 +303,10 @@
                     checkmark.textContent = '✓';
                     this.appendChild(checkmark);
                     
+                    // Store answer
                     answers[currentQuestion] = this.dataset.value;
                     
-                    // Auto-advance
+                    // Auto-advance after selection
                     setTimeout(() => {
                         if (currentQuestion < questions.length - 1) {
                             document.getElementById('next-btn').click();
@@ -260,198 +318,192 @@
             updateProgress();
         }
 
-        // Generate a simple session ID
+        // ============================================
+        // SESSION MANAGEMENT
+        // ============================================
         function generateSessionId() {
-            return 'SESS_' + Date.now().toString(36).toUpperCase() + '_' + Math.random().toString(36).substr(2, 8).toUpperCase();
+            const timestamp = Date.now().toString(36).toUpperCase();
+            const random = Math.random().toString(36).substr(2, 6).toUpperCase();
+            return `SESS_${timestamp}_${random}`;
         }
 
-        // ==================== REAL QR CODE GENERATION ====================
-        
-        // Method 1: Use qrcode library (most reliable)
-        function generateQRWithLibrary(sessionUrl, container) {
-            return new Promise((resolve, reject) => {
-                if (typeof QRCode === 'undefined' || !QRCode.toCanvas) {
-                    reject('QRCode library not available');
-                    return;
-                }
-                
-                const canvas = document.createElement('canvas');
-                
-                QRCode.toCanvas(canvas, sessionUrl, {
-                    width: 280,
-                    margin: 2,
-                    color: {
-                        dark: '#e11d48',
-                        light: '#ffffff'
-                    },
-                    errorCorrectionLevel: 'H'
-                }, (error) => {
-                    if (error) {
-                        reject(error);
-                    } else {
-                        container.innerHTML = '';
-                        container.appendChild(canvas);
-                        resolve(canvas);
-                    }
+        async function createSession(profileData) {
+            const sessionId = generateSessionId();
+            const shortCode = sessionId.substring(5, 13); // First 8 chars after "SESS_"
+            
+            const sessionData = {
+                id: sessionId,
+                profile: profileData,
+                savedItems: JSON.parse(localStorage.getItem('albanianSavedItems') || '[]'),
+                createdAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + 3600000).toISOString() // 1 hour
+            };
+            
+            // Save to localStorage
+            localStorage.setItem(`session_${sessionId}`, JSON.stringify(sessionData));
+            localStorage.setItem('current_session', sessionId);
+            
+            // Try to save to backend (optional - doesn't block if fails)
+            try {
+                await fetch('https://triage-albania.onrender.com/api/session/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        profileData,
+                        savedItems: sessionData.savedItems,
+                        kioskId: 'kiosk1'
+                    })
                 });
-            });
+                console.log('✅ Session saved to backend');
+            } catch (error) {
+                console.log('📱 Using local session only - backend not required');
+            }
+            
+            return { sessionId, shortCode, sessionData };
         }
 
-        // Method 2: Use qrcode-generator library (backup)
-        function generateQRWithGenerator(sessionUrl, container) {
-            return new Promise((resolve, reject) => {
-                if (typeof qrcode === 'undefined') {
-                    reject('qrcode-generator not available');
-                    return;
-                }
-                
-                try {
-                    const qr = qrcode(0, 'H');
-                    qr.addData(sessionUrl);
-                    qr.make();
-                    
-                    const size = qr.getModuleCount();
-                    const cellSize = 6;
-                    const width = size * cellSize;
-                    
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = width;
-                    const ctx = canvas.getContext('2d');
-                    
-                    // White background
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, width, width);
-                    
-                    // Draw QR modules
-                    ctx.fillStyle = '#e11d48';
-                    for (let row = 0; row < size; row++) {
-                        for (let col = 0; col < size; col++) {
-                            if (qr.isDark(row, col)) {
-                                ctx.fillRect(col * cellSize, row * cellSize, cellSize - 1, cellSize - 1);
-                            }
-                        }
-                    }
-                    
-                    container.innerHTML = '';
-                    container.appendChild(canvas);
-                    resolve(canvas);
-                } catch (error) {
-                    reject(error);
-                }
-            });
-        }
-
-        // Method 3: Manual QR code generation (last resort)
-        function generateManualQR(sessionUrl, container) {
-            // Simple QR-like pattern - not scannable but better than nothing
-            container.innerHTML = `
-                <div class="bg-white p-4 rounded-xl text-center">
-                    <div class="text-6xl mb-4">📱</div>
-                    <p class="font-mono text-sm bg-gray-100 p-3 rounded break-all">${sessionUrl}</p>
-                    <p class="text-xs text-gray-500 mt-2">Please use the manual code below</p>
-                </div>
-            `;
-            return Promise.resolve();
-        }
-
-        // Main QR generation function with fallbacks
-        async function generateRealQRCode(sessionId) {
+        // ============================================
+        // QR CODE GENERATION
+        // ============================================
+        async function generateQRCode(sessionId, shortCode) {
             const qrContainer = document.getElementById('qr-code');
-            const sessionUrl = `${window.location.origin}/mobile-load.html?session=${sessionId}`;
+            
+            // Update short code display
+            document.getElementById('short-code').textContent = shortCode;
+            
+            // Create URL for mobile load page (using the fixed version)
+            const mobileLoadUrl = `${window.location.origin}/mobile-load-fixed.html?session=${sessionId}`;
             
             qrContainer.innerHTML = '<div class="text-gray-400">Generating QR code...</div>';
             
-            // Try Method 1
-            try {
-                await generateQRWithLibrary(sessionUrl, qrContainer);
-                console.log('✅ QR generated with primary library');
-                return;
-            } catch (error) {
-                console.warn('Primary QR library failed:', error);
+            // Try using QRCode library
+            if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+                try {
+                    const canvas = document.createElement('canvas');
+                    
+                    await new Promise((resolve, reject) => {
+                        QRCode.toCanvas(canvas, mobileLoadUrl, {
+                            width: 250,
+                            margin: 2,
+                            color: {
+                                dark: '#e11d48',
+                                light: '#ffffff'
+                            },
+                            errorCorrectionLevel: 'H'
+                        }, (error) => {
+                            if (error) reject(error);
+                            else resolve(canvas);
+                        });
+                    });
+                    
+                    qrContainer.innerHTML = '';
+                    qrContainer.appendChild(canvas);
+                    console.log('✅ QR code generated successfully');
+                    return;
+                } catch (error) {
+                    console.warn('QR generation failed:', error);
+                }
             }
             
-            // Try Method 2
-            try {
-                await generateQRWithGenerator(sessionUrl, qrContainer);
-                console.log('✅ QR generated with backup library');
-                return;
-            } catch (error) {
-                console.warn('Backup QR library failed:', error);
+            // Fallback: Create a simple QR using QRCode.toDataURL
+            if (typeof QRCode !== 'undefined' && QRCode.toDataURL) {
+                try {
+                    QRCode.toDataURL(mobileLoadUrl, {
+                        width: 250,
+                        margin: 2,
+                        color: { dark: '#e11d48', light: '#ffffff' }
+                    }, (error, url) => {
+                        if (error) throw error;
+                        qrContainer.innerHTML = `<img src="${url}" alt="QR Code" class="rounded-xl shadow-lg">`;
+                    });
+                    return;
+                } catch (error) {
+                    console.warn('DataURL method failed:', error);
+                }
             }
             
-            // Method 3 - Manual fallback
-            await generateManualQR(sessionUrl, qrContainer);
-            console.log('⚠️ Using manual QR fallback');
+            // Final fallback: Show URL as text
+            qrContainer.innerHTML = `
+                <div class="bg-gray-100 p-4 rounded-lg w-full">
+                    <p class="text-sm text-gray-600 mb-2">📱 Scan failed? Use this link or code:</p>
+                    <div class="bg-white p-2 rounded border mb-2">
+                        <code class="text-xs break-all">${mobileLoadUrl}</code>
+                    </div>
+                    <p class="text-sm text-gray-500">Or enter code: <strong class="font-mono">${shortCode}</strong></p>
+                </div>
+            `;
         }
 
-        // Complete quiz and show QR
+        // ============================================
+        // QUIZ COMPLETION
+        // ============================================
         async function completeQuiz() {
+            // Build profile from answers
             const profile = {
-                interests: answers[0],
-                groupType: answers[1],
-                pace: answers[2],
-                duration: answers[3],
-                special: answers[4],
-                completed: new Date().toISOString()
+                interests: answers[0] || 'history',
+                groupType: answers[1] || 'solo',
+                pace: answers[2] || 'moderate',
+                duration: answers[3] || 'medium',
+                special: answers[4] || 'photo',
+                completedAt: new Date().toISOString()
             };
             
-            // Save profile
+            // Save profile to localStorage
             localStorage.setItem('currentProfile', JSON.stringify(profile));
             
             if (isKiosk) {
-                // Generate session ID
-                const sessionId = generateSessionId();
-                const shortCode = sessionId.substring(0, 8);
+                // Show loading state
+                Toast.info('Creating your session...');
                 
-                // Save session data
-                const sessionData = {
-                    id: sessionId,
-                    profile: profile,
-                    savedItems: JSON.parse(localStorage.getItem('albanianSavedItems') || '[]'),
-                    createdAt: new Date().toISOString(),
-                    expiresAt: new Date(Date.now() + 3600000).toISOString()
-                };
-                
-                localStorage.setItem(`session_${sessionId}`, JSON.stringify(sessionData));
-                localStorage.setItem('current_session', sessionId);
+                // Create session
+                const { sessionId, shortCode } = await createSession(profile);
                 
                 // Show QR section
                 document.getElementById('qr-section').classList.remove('hidden');
-                document.getElementById('short-code').textContent = shortCode;
+                document.getElementById('success-section').classList.add('hidden');
                 
                 // Hide navigation
                 document.getElementById('prev-btn').style.display = 'none';
                 document.getElementById('next-btn').style.display = 'none';
                 
-                // Generate REAL scannable QR code
-                await generateRealQRCode(sessionId);
+                // Generate QR code
+                await generateQRCode(sessionId, shortCode);
+                
+                Toast.success('Session created! Scan QR code to continue on your phone.');
                 
             } else {
-                // Normal mode - go to results
-                window.location.href = 'triage-results.html';
+                // Normal mode - show success and redirect button
+                document.getElementById('success-section').classList.remove('hidden');
+                document.getElementById('qr-section').classList.add('hidden');
+                
+                // Hide navigation
+                document.getElementById('prev-btn').style.display = 'none';
+                document.getElementById('next-btn').style.display = 'none';
             }
         }
 
-        // Copy code to clipboard
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
         window.copyCode = function() {
             const code = document.getElementById('short-code').textContent;
             navigator.clipboard.writeText(code).then(() => {
-                alert('✅ Code copied to clipboard!');
+                Toast.success('Code copied to clipboard!');
             }).catch(() => {
                 alert('Please copy the code manually: ' + code);
             });
         };
 
-        // Continue on this device
         window.continueToResults = function() {
             window.location.href = 'triage-results.html';
         };
 
-        // Navigation
+        // ============================================
+        // NAVIGATION
+        // ============================================
         document.getElementById('next-btn').addEventListener('click', () => {
             if (!answers[currentQuestion]) {
-                alert('Please select an option to continue!');
+                Toast.error('Please select an option to continue');
                 return;
             }
             
@@ -472,25 +524,38 @@
             }
         });
 
-        // Initialize
-        renderQuestion();
-
-        // Verify QR libraries loaded
-        window.addEventListener('load', () => {
-            if (typeof QRCode !== 'undefined') {
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        function init() {
+            console.log('🚀 Profile page initializing...');
+            console.log('📍 Mode:', isKiosk ? 'Kiosk' : 'Normal');
+            
+            renderQuestion();
+            
+            // Check if QR library loaded
+            if (typeof QRCode === 'undefined') {
+                console.warn('QRCode library not loaded - will use fallback');
+                Toast.info('QR library loading...');
+                
+                // Try loading from alternative CDN
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+                script.onload = () => console.log('✅ QRCode fallback loaded');
+                document.head.appendChild(script);
+            } else {
                 console.log('✅ QRCode library loaded');
             }
-            if (typeof qrcode !== 'undefined') {
-                console.log('✅ qrcode-generator library loaded');
-            }
-        });
+        }
+
+        // Start the app
+        init();
     </script>
-     <script>
+    <script>
         // Page-specific initialization
         document.addEventListener('DOMContentLoaded', () => {
             console.log('📄 Page loaded');
         });
     </script>
-</body>
 </body>
 </html>
