@@ -12,16 +12,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'triage-secret-key-2024-free-versio
 
 // ==================== MIDDLEWARE ====================
 // Only declare cors ONCE!
+// backend/server.js - Update CORS
 app.use(cors({
   origin: [
     'http://localhost:5500',
     'http://127.0.0.1:5500',
-    'https://triage-albania.netlify.app',
-    'https://triage-albania.netlify.app'
+    'https://triage-albania.netlify.app',  // Your Netlify URL
+    'https://triage-albania.onrender.com'   // Your backend (though frontend won't be here)
   ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Session-ID']
+  credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
