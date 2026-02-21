@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIAGE · Your Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #e11d48;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen">
+
+    <div class="container mx-auto px-4 py-12 max-w-md">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-block bg-white shadow-xl rounded-full p-4 mb-4 border-4 border-red-500">
+                <span class="text-6xl">🇦🇱</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">TRIAGE Albania</h1>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="bg-white rounded-3xl shadow-2xl p-8 text-center">
+            <div class="loader mx-auto mb-6"></div>
+            <h2 class="text-2xl font-bold mb-2">Loading Your Journey</h2>
+            <p class="text-gray-500" id="loading-message">Reading your profile...</p>
+        </div>
+
+        <!-- Success State -->
+        <div id="success-state" class="bg-white rounded-3xl shadow-2xl p-8 text-center hidden">
+            <span class="text-7xl block mb-4 animate-bounce">✨</span>
+            <h2 class="text-2xl font-bold mb-2">Welcome to Albania!</h2>
+            <p class="text-gray-500 mb-6" id="profile-summary"></p>
+            <a href="triage-results.html" class="block w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700">
+                Start Exploring →
+            </a>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="bg-white rounded-3xl shadow-2xl p-8 text-center hidden">
+            <span class="text-7xl block mb-4">😕</span>
+            <h2 class="text-2xl font-bold mb-2">Invalid Link</h2>
+            <p class="text-gray-500 mb-6">This link has expired or is invalid</p>
+            <a href="profile.html?kiosk=true" class="block w-full bg-gray-600 text-white py-3 rounded-xl font-bold hover:bg-gray-700">
+                Return to Kiosk
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Get data from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataParam = urlParams.get('data');
+        const timestamp = urlParams.get('t');
+
+        const loadingState = document.getElementById('loading-state');
+        const successState = document.getElementById('success-state');
+        const errorState = document.getElementById('error-state');
+        const loadingMsg = document.getElementById('loading-message');
+        const profileSummary = document.getElementById('profile-summary');
+
+        function showError(msg) {
+            loadingState.classList.add('hidden');
+            errorState.classList.remove('hidden');
+        }
+
+        function isExpired(ts) {
+            if (!ts) return false;
+            const age = Date.now() - parseInt(ts);
+            return age > 60 * 60 * 1000; // 60 minutes
+        }
+
+        function loadProfile() {
+            loadingMsg.textContent = 'Reading profile...';
+            
+            setTimeout(() => {
+                if (!dataParam) {
+                    showError('No profile data found');
+                    return;
+                }
+                
+                if (isExpired(timestamp)) {
+                    showError('This link has expired (60 minutes)');
+                    return;
+                }
+                
+                loadingMsg.textContent = 'Processing...';
+                
+                setTimeout(() => {
+                    try {
+                        // Parse the comma-separated values
+                        const values = dataParam.split(',');
+                        
+                        if (values.length >= 5) {
+                            const profile = {
+                                interests: values[0],
+                                groupType: values[1],
+                                pace: values[2],
+                                duration: values[3],
+                                special: values[4]
+                            };
+                            
+                            // Save to localStorage
+                            localStorage.setItem('currentProfile', JSON.stringify(profile));
+                            
+                            // Show summary
+                            const interests = {
+                                history: 'History Lover',
+                                nature: 'Nature Explorer',
+                                beach: 'Beach Goer',
+                                food: 'Foodie',
+                                culture: 'Culture Seeker'
+                            }[profile.interests] || 'Explorer';
+                            
+                            profileSummary.textContent = `${interests} · Ready to explore Albania!`;
+                            
+                            loadingState.classList.add('hidden');
+                            successState.classList.remove('hidden');
+                        } else {
+                            showError('Invalid profile data');
+                        }
+                    } catch (e) {
+                        showError('Could not read profile');
+                    }
+                }, 500);
+            }, 500);
+        }
+
+        // Start loading
+        loadProfile();
+    </script>
+</body>
+</html>
