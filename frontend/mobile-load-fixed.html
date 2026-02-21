@@ -6,10 +6,6 @@
     <title>TRIAGE · Load Your Journey</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #e11d48;
@@ -18,17 +14,16 @@
             height: 50px;
             animation: spin 1s linear infinite;
         }
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
-        <script src="js/config.js"></script>      <!-- MUST come first -->
-    <script src="js/api-client.js"></script>  <!-- Then this -->
-    <script src="js/app.js"></script>         <!-- Then your app -->
 </head>
 <body class="bg-gradient-to-br from-red-50 to-orange-50 min-h-screen">
 
@@ -40,340 +35,136 @@
                 <span class="text-6xl">🇦🇱</span>
             </div>
             <h1 class="text-3xl font-bold text-gray-800">TRIAGE Albania</h1>
-            <p class="text-gray-500 mt-2">Load your personalized journey</p>
         </div>
 
         <!-- Loading State -->
         <div id="loading-state" class="bg-white rounded-3xl shadow-2xl p-8 text-center fade-in">
             <div class="loader mx-auto mb-6"></div>
             <h2 class="text-2xl font-bold mb-2">Loading Your Journey</h2>
-            <p class="text-gray-500 mb-4" id="loading-message">Please wait while we load your session...</p>
+            <p class="text-gray-500 mb-4" id="loading-message">Please wait...</p>
             <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
-                <div class="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-500" id="progress-bar" style="width: 30%"></div>
+                <div class="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-500" id="progress-bar" style="width: 0%"></div>
             </div>
-            <p class="text-xs text-gray-400" id="session-id-display"></p>
+            <button id="manual-btn" onclick="showManual()" class="text-sm text-red-600 hover:underline hidden">
+                Taking too long? Enter code manually
+            </button>
         </div>
 
-        <!-- Manual Entry State -->
+        <!-- Manual Entry -->
         <div id="manual-state" class="bg-white rounded-3xl shadow-2xl p-8 text-center hidden fade-in">
             <span class="text-5xl block mb-4">⌨️</span>
             <h2 class="text-2xl font-bold mb-4">Enter Session Code</h2>
-            <p class="text-gray-500 mb-6">Enter the 8-character code from the kiosk</p>
-            
-            <div class="mb-6">
-                <input type="text" 
-                       id="session-code" 
-                       maxlength="8" 
-                       placeholder="e.g., SESS_1234" 
-                       class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-center font-mono text-xl uppercase tracking-wider focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none">
-            </div>
-            
-            <div class="flex gap-3">
-                <button onclick="loadManualSession()" class="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition">
-                    Load Session
-                </button>
-                <button onclick="goBack()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
-                    Back
-                </button>
-            </div>
-            
-            <p class="text-xs text-gray-400 mt-4">
-                Don't have a code? Return to the kiosk and complete the quiz first.
-            </p>
+            <input type="text" id="session-code" placeholder="Enter code" 
+                   class="w-full px-4 py-3 border-2 rounded-xl text-center font-mono text-xl mb-4">
+            <button onclick="loadManual()" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700">
+                Load Session
+            </button>
         </div>
 
-        <!-- Success State -->
+        <!-- Success -->
         <div id="success-state" class="bg-white rounded-3xl shadow-2xl p-8 text-center hidden fade-in">
             <span class="text-7xl block mb-4 animate-bounce">✨</span>
             <h2 class="text-2xl font-bold mb-2">Journey Loaded!</h2>
-            <p class="text-gray-500 mb-6">Your Albanian adventure is ready</p>
-            
-            <div class="space-y-4 mb-8">
-                <div class="flex items-center p-4 bg-green-50 rounded-xl">
-                    <span class="text-2xl mr-3">✅</span>
-                    <div class="text-left">
-                        <p class="font-medium">Profile synced</p>
-                        <p class="text-sm text-gray-500" id="success-profile">Ready to explore</p>
-                    </div>
-                </div>
-                <div class="flex items-center p-4 bg-green-50 rounded-xl">
-                    <span class="text-2xl mr-3">📍</span>
-                    <div class="text-left">
-                        <p class="font-medium">Saved places</p>
-                        <p class="text-sm text-gray-500" id="success-saved">0 items ready</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="flex gap-3">
-                <a href="triage-results.html" class="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 rounded-xl font-bold hover:shadow-xl transition">
-                    Start Exploring →
-                </a>
-                <button onclick="resetKiosk()" class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
-                    Clear & Return
-                </button>
-            </div>
-        </div>
-
-        <!-- Error State -->
-        <div id="error-state" class="bg-white rounded-3xl shadow-2xl p-8 text-center hidden fade-in">
-            <span class="text-7xl block mb-4">😕</span>
-            <h2 class="text-2xl font-bold mb-2">Session Not Found</h2>
-            <p class="text-gray-500 mb-6" id="error-message">The session may have expired or the code is invalid</p>
-            
-            <div class="space-y-3">
-                <button onclick="showManualEntry()" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition">
-                    Enter Code Manually
-                </button>
-                <a href="profile.html?kiosk=true" class="block w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition">
-                    Return to Kiosk
-                </a>
-            </div>
+            <a href="triage-results.html" class="block w-full bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 mt-4">
+                Start Exploring →
+            </a>
         </div>
     </div>
 
     <script>
-        // ============================================
-        // CONFIGURATION
-        // ============================================
-        const API_BASE = 'https://triage-albania.onrender.com';
-        
-        // Get session ID from URL
+        // Get session from URL
         const urlParams = new URLSearchParams(window.location.search);
-        const urlSessionId = urlParams.get('session');
-        
-        // ============================================
-        // STATE MANAGEMENT
-        // ============================================
-        let currentSession = null;
-        
-        // DOM Elements
+        const sessionId = urlParams.get('session');
+
+        // Elements
         const loadingState = document.getElementById('loading-state');
         const manualState = document.getElementById('manual-state');
         const successState = document.getElementById('success-state');
-        const errorState = document.getElementById('error-state');
-        const loadingMessage = document.getElementById('loading-message');
+        const loadingMsg = document.getElementById('loading-message');
         const progressBar = document.getElementById('progress-bar');
-        const sessionIdDisplay = document.getElementById('session-id-display');
-        const errorMessage = document.getElementById('error-message');
-        
-        // ============================================
-        // UTILITY FUNCTIONS
-        // ============================================
-        function updateProgress(percent, message) {
+        const manualBtn = document.getElementById('manual-btn');
+
+        // Update progress
+        function setProgress(percent, msg) {
             progressBar.style.width = percent + '%';
-            if (message) loadingMessage.textContent = message;
+            if (msg) loadingMsg.textContent = msg;
         }
-        
-        function showState(state) {
-            [loadingState, manualState, successState, errorState].forEach(s => {
-                s.classList.add('hidden');
-            });
-            state.classList.remove('hidden');
-        }
-        
-        // ============================================
-        // SESSION MANAGEMENT
-        // ============================================
-        
-        // Try to load session from localStorage
-        function findSessionInStorage(sessionId) {
-            // Try exact match
-            const exactMatch = localStorage.getItem(`session_${sessionId}`);
-            if (exactMatch) return JSON.parse(exactMatch);
+
+        // Show manual after 3 seconds
+        setTimeout(() => {
+            manualBtn.classList.remove('hidden');
+        }, 3000);
+
+        // Find session in localStorage
+        function findSession(id) {
+            if (!id) return null;
+            const exact = localStorage.getItem(`session_${id}`);
+            if (exact) return JSON.parse(exact);
             
-            // Try without prefix
-            const allKeys = Object.keys(localStorage);
-            for (const key of allKeys) {
-                if (key.includes(sessionId) || sessionId.includes(key.replace('session_', ''))) {
+            for (let key of Object.keys(localStorage)) {
+                if (key.includes(id)) {
                     try {
                         return JSON.parse(localStorage.getItem(key));
-                    } catch (e) {
-                        console.warn('Failed to parse session:', e);
-                    }
+                    } catch (e) {}
                 }
             }
-            
             return null;
         }
-        
-        // Try to load session from backend
-        async function loadSessionFromBackend(sessionId) {
-            try {
-                const response = await fetch(`${API_BASE}/api/session/status/${sessionId}`);
-                const data = await response.json();
-                
-                if (data.valid) {
-                    return {
-                        id: sessionId,
-                        profile: data.profile || { interests: 'history', duration: 'medium' },
-                        savedItems: data.savedItems || []
-                    };
-                }
-                return null;
-            } catch (error) {
-                console.warn('Backend session load failed:', error);
-                return null;
-            }
-        }
-        
-        // Create a fallback session
-        function createFallbackSession(sessionId) {
-            const defaultProfile = {
-                interests: 'history',
-                groupType: 'solo',
-                pace: 'moderate',
-                duration: 'medium',
-                special: 'photo'
-            };
-            
-            const session = {
-                id: sessionId || 'fallback_' + Date.now(),
-                profile: defaultProfile,
-                savedItems: [],
-                createdAt: new Date().toISOString(),
-                isFallback: true
-            };
-            
-            localStorage.setItem(`session_${session.id}`, JSON.stringify(session));
-            return session;
-        }
-        
-        // Main session loading function
-        async function loadSession(sessionId) {
-            if (!sessionId) {
-                showState(manualState);
-                return;
-            }
-            
-            sessionIdDisplay.textContent = `Session: ${sessionId}`;
-            showState(loadingState);
-            
-            updateProgress(30, 'Checking local storage...');
-            
-            // Try localStorage first
-            let session = findSessionInStorage(sessionId);
-            
-            if (session) {
-                updateProgress(60, 'Found local session...');
-                console.log('✅ Found session in localStorage');
-            } else {
-                updateProgress(50, 'Checking backend...');
-                
-                // Try backend
-                session = await loadSessionFromBackend(sessionId);
-                
-                if (session) {
-                    updateProgress(70, 'Loading from server...');
-                    console.log('✅ Found session on backend');
-                    
-                    // Save to localStorage for future
-                    localStorage.setItem(`session_${sessionId}`, JSON.stringify(session));
-                }
-            }
-            
-            if (session) {
-                updateProgress(90, 'Preparing your journey...');
-                
-                // Save to current session
-                currentSession = session;
-                localStorage.setItem('currentProfile', JSON.stringify(session.profile || {}));
-                
-                if (session.savedItems) {
-                    localStorage.setItem('albanianSavedItems', JSON.stringify(session.savedItems));
-                }
-                
-                // Update success screen
-                document.getElementById('success-profile').textContent = 
-                    `${session.profile?.interests || 'Explorer'} · ${session.profile?.duration || 'Multi-day'}`;
-                document.getElementById('success-saved').textContent = 
-                    `${session.savedItems?.length || 0} items ready`;
-                
-                updateProgress(100, 'Complete!');
-                
-                // Show success
-                setTimeout(() => {
-                    showState(successState);
-                    
-                    // Try to reset kiosk
-                    fetch(`${API_BASE}/api/kiosk/reset/kiosk1`, { method: 'POST' }).catch(() => {});
-                }, 500);
-                
-            } else {
-                // No session found
-                errorMessage.textContent = 'Session not found. It may have expired or the code is invalid.';
-                showState(errorState);
-            }
-        }
-        
-        // ============================================
-        // USER ACTIONS
-        // ============================================
-        
-        window.showManualEntry = function() {
-            showState(manualState);
-            document.getElementById('session-code').value = '';
-        };
-        
-        window.loadManualSession = function() {
-            const code = document.getElementById('session-code').value.trim().toUpperCase();
-            
-            if (!code) {
-                alert('Please enter a session code');
-                return;
-            }
-            
-            // Clean the code (remove any non-alphanumeric)
-            const cleanCode = code.replace(/[^A-Z0-9]/g, '');
-            
-            if (cleanCode.length < 4) {
-                alert('Code must be at least 4 characters');
-                return;
-            }
-            
-            loadSession(cleanCode);
-        };
-        
-        window.resetKiosk = function() {
-            // Clear session data
-            localStorage.removeItem('currentProfile');
-            localStorage.removeItem('albanianSavedItems');
-            localStorage.removeItem('current_session');
-            
-            // Return to kiosk
-            window.location.href = 'profile.html?kiosk=true';
-        };
-        
-        window.goBack = function() {
-            showState(manualState);
-        };
-        
-        // ============================================
-        // INITIALIZATION
-        // ============================================
-        
-        // Start loading if session ID in URL
-        if (urlSessionId) {
-            loadSession(urlSessionId);
-        } else {
-            // No session ID - show manual entry
-            showState(manualState);
-        }
-        
-        // Also check for session in URL hash (some QR generators use #)
-        if (window.location.hash && window.location.hash.length > 1) {
-            const hashSession = window.location.hash.substring(1);
-            if (hashSession && !urlSessionId) {
-                loadSession(hashSession);
-            }
-        }
-    </script>
 
-    <script>
-        // Page-specific initialization
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('📄 Page loaded');
-        });
+        // Load session function
+        function loadSession(id) {
+            setProgress(20, 'Checking...');
+            
+            setTimeout(() => {
+                setProgress(60, 'Searching...');
+                
+                setTimeout(() => {
+                    const session = findSession(id);
+                    
+                    if (session) {
+                        setProgress(100, 'Found!');
+                        localStorage.setItem('currentProfile', JSON.stringify(session.profile || {}));
+                        if (session.savedItems) {
+                            localStorage.setItem('albanianSavedItems', JSON.stringify(session.savedItems));
+                        }
+                        setTimeout(() => {
+                            loadingState.classList.add('hidden');
+                            successState.classList.remove('hidden');
+                        }, 500);
+                    } else {
+                        setProgress(100, 'Not found');
+                        setTimeout(() => {
+                            loadingState.classList.add('hidden');
+                            manualState.classList.remove('hidden');
+                        }, 500);
+                    }
+                }, 1000);
+            }, 500);
+        }
+
+        // Show manual entry
+        window.showManual = function() {
+            loadingState.classList.add('hidden');
+            manualState.classList.remove('hidden');
+        };
+
+        // Load manual code
+        window.loadManual = function() {
+            const code = document.getElementById('session-code').value.trim();
+            if (code) {
+                manualState.classList.add('hidden');
+                loadingState.classList.remove('hidden');
+                setProgress(30, 'Loading manual code...');
+                loadSession(code);
+            }
+        };
+
+        // Start loading if we have a session ID
+        if (sessionId) {
+            loadSession(sessionId);
+        } else {
+            showManual();
+        }
     </script>
 </body>
 </html>
